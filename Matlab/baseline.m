@@ -3,7 +3,7 @@
 clear, clc
 
 x = 10:10:90;
-file_path = '../Save/result_pred_2.csv';
+file_path = '../Save/result_pred.csv';
 
 data = readmatrix(file_path);
 
@@ -16,6 +16,9 @@ xlabel('Number of samples for training')
 ylabel('Classification accuracy')
 xlim([10, 90])
 xticks([10:10:90])
+yticks([0.2:0.1:1])
+legend('LightGBM', 'Random Guess', 'Location', 'northwest')
 set(gca, 'fontsize', 20)
 grid on
 hold off
+saveas(gcf, './Image/baseline.png')

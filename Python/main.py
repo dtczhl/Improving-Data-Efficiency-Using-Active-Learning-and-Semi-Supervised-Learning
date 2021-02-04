@@ -4,11 +4,15 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
-import lightgbm as lgb
+# import lightgbm as lgb
+import optuna.integration.lightgbm as lgb
+import optuna
 
 import numpy as np
 from numpy import savetxt
 import matplotlib.pyplot as plt
+
+optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -16,7 +20,8 @@ dire = "../data/PAW FTIR data/"
 n_run = 10
 
 n_train_sample_arr = range(10, 91, 10)
-# n_train_sample_arr = [91]
+# n_train_sample_arr = [90]
+
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))
@@ -67,20 +72,29 @@ target_cf = le.fit_transform(target)
 
 def run_cv(train_set, target, num_class, n_sample):
     # these are the hyperparameters for the model
+    # param = {
+    #     'objective': 'multiclass',
+    #     'num_class': num_class,
+    #     'metric': 'multi_logloss',
+    #     'learning_rate': 0.0005,
+    #     "boosting": "gbdt",
+    #     "feature_fraction": 1,
+    #     "bagging_freq": 1,
+    #     "bagging_fraction": 0.7083,
+    #     "bagging_seed": 11,
+    #     "lambda_l1": 0.2634,
+    #     "random_state": 133,
+    #     "verbose": -1
+    # }
+
     param = {
         'objective': 'multiclass',
         'num_class': num_class,
         'metric': 'multi_logloss',
-        'learning_rate': 0.0005,
-        "boosting": "gbdt",
-        "feature_fraction": 1,
-        "bagging_freq": 1,
-        "bagging_fraction": 0.7083,
-        "bagging_seed": 11,
-        "lambda_l1": 0.2634,
-        "random_state": 133,
+        "boosting_type": "gbdt",
         "verbose": -1
     }
+
     folds = KFold(n_splits=5, shuffle=True)
     oof = np.zeros([len(train_set), num_class])
     feature_importance_df = pd.DataFrame()
@@ -88,29 +102,25 @@ def run_cv(train_set, target, num_class, n_sample):
     # below is to split the entire dataset into train and test sets; Train on train set and evaluate on test set
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
-        # print(len(val_idx))
-
-        # val_idx = np.append(val_idx, train_idx[-1])
-        # train_idx = train_idx[:-1]
+        best_params, tuning_history = dict(), list()
 
         train_idx = train_idx[:n_sample]
 
-        print(len(train_idx), len(val_idx))
+        # print(len(train_idx), len(val_idx))
 
         # print("fold {}".format(fold_))
         train_data = lgb.Dataset(train_set.iloc[train_idx], label=target[train_idx])
         val_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
 
         num_round = 10000
-        clf = lgb.train(param, train_data, num_round, valid_sets=[val_data], verbose_eval=False)
+        # clf = lgb.train(param, train_data, num_round, valid_sets=[val_data], verbose_eval=False)
+        clf = lgb.train(param, train_data, valid_sets=[val_data], verbose_eval=False, early_stopping_rounds=100)
         oof[val_idx, :] = clf.predict(train_set.iloc[val_idx], num_iteration=clf.best_iteration)
         fold_importance_df = pd.DataFrame()
         fold_importance_df["feature"] = train_set.columns
         fold_importance_df["importance"] = clf.feature_importance()
         fold_importance_df["fold"] = fold_ + 1
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
-
-    # exit(0)
 
     return feature_importance_df, oof
 
@@ -121,6 +131,9 @@ for i_train_sample in range(len(n_train_sample_arr)):
     n_train_sample = n_train_sample_arr[i_train_sample]
 
     for i_run in range(n_run):
+
+        print("\n----- #samples: {}, #run: {}/{}".format(n_train_sample, i_run+1, n_run))
+
         feature_importance_df_cf, oof_cf = run_cv(train_set, target_cf, len(set(target_cf)), n_train_sample)
         pred = np.zeros([len(oof_cf)])
         for i in range(len(oof_cf)):

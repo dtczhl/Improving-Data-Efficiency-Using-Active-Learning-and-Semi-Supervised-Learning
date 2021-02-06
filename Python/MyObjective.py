@@ -42,12 +42,13 @@ class MyObjective(object):
         self._booster = gbm
 
         preds = gbm.predict(self.train_set.iloc[self.val_idx])
-        gt_target = self.target[self.val_idx]
-        gt = np.zeros((len(gt_target), self.num_class), dtype=float)
-        for _i in range(len(gt)):
-            gt[_i][gt_target[_i]] = 1
-
+        # gt_target = self.target[self.val_idx]
+        # gt = np.zeros((len(gt_target), self.num_class), dtype=float)
+        # for _i in range(len(gt)):
+        #     gt[_i][gt_target[_i]] = 1
+        # loss = sklearn.metrics.log_loss(self.target[self.val_idx], preds)
         loss = sklearn.metrics.log_loss(self.target[self.val_idx], preds)
+
         return loss
 
     def callback(self, study, trial):

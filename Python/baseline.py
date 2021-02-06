@@ -20,7 +20,7 @@ n_train_sample_arr = range(10, 91, 5)
 n_run = 20
 
 # optuna number of trails
-n_trial = 500
+n_trial = 100
 
 # data directory
 dire = "../data/PAW FTIR data/"

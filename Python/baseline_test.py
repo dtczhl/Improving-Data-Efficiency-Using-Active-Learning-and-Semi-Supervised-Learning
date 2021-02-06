@@ -4,24 +4,25 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
-# import lightgbm as lgb
-import optuna.integration.lightgbm as lgb
+import lightgbm as lgb
 import optuna
+
+import sklearn.metrics
 
 import numpy as np
 from numpy import savetxt
 import matplotlib.pyplot as plt
+
 
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 # data directory
 dire = "../data/PAW FTIR data/"
 
-n_run = 10
+n_run = 1
 
-n_train_sample_arr = range(10, 91, 10)
-# n_train_sample_arr = [90]
-
+# n_train_sample_arr = range(10, 91, 10)
+n_train_sample_arr = [90]
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))
@@ -41,59 +42,61 @@ for i_file in range(len(filesnames)):
                 col_value = float(temp[1])
                 df.loc[i_file, col_name] = col_value
         df.loc[i_file, 'group'] = filesnames[i_file][0:3]
-# print(df.shape)
 
 # "group" column refers to Y, like naocl concentration; originally it is 0ppm; I convert it to numeric number 0
 df["group"] = df["group"].apply(lambda x: x.split('-')[0])
 df["group"] = df["group"].astype("int64")  # change to number data type
-# print(df.head())
 
 train_set = df.drop(["group"], axis=1)
 target = df["group"]
-# print(train_set.shape)
 
-
-# standardize the data before running PCA
 stand = preprocessing.StandardScaler()
-# stand.fit(train_set)
 data = stand.fit_transform(train_set)
-
-# fit the data with PCA
-# pca = PCA(n_components=2)
-
-# reduced_data is the data obtained after PCA transformation
-# reduced_data = pca.fit_transform(data)
-# reduced_data = pd.DataFrame(reduced_data, columns=["Dimension 1", "Dimension 2"])
-
 le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)
 # print(data)
 
 
 def run_cv(train_set, target, num_class, n_sample):
-    # these are the hyperparameters for the model
-    # param = {
-    #     'objective': 'multiclass',
-    #     'num_class': num_class,
-    #     'metric': 'multi_logloss',
-    #     'learning_rate': 0.0005,
-    #     "boosting": "gbdt",
-    #     "feature_fraction": 1,
-    #     "bagging_freq": 1,
-    #     "bagging_fraction": 0.7083,
-    #     "bagging_seed": 11,
-    #     "lambda_l1": 0.2634,
-    #     "random_state": 133,
-    #     "verbose": -1
-    # }
 
-    param = {
-        'objective': 'multiclass',
-        'num_class': num_class,
-        'metric': 'multi_logloss',
-        "boosting_type": "gbdt",
-        "verbose": -1
-    }
+    class Objective(object):
+        def __init__(self, train_set, target, num_class, n_sample, train_idx, val_idx):
+            self.train_set = train_set
+            self.target = target
+            self.num_class = num_class
+            self.n_sample = n_sample
+            self.train_idx = train_idx
+            self.val_idx = val_idx
+
+        def __call__(self, trial):
+            param = {
+                'objective': 'multiclass',
+                'num_class': self.num_class,
+                'metric': 'multi_logloss',
+                "boosting_type": "gbdt",
+                "verbose": -1
+            }
+
+            train_idx = self.train_idx[:self.n_sample]
+            train_data = lgb.Dataset(self.train_set.iloc[train_idx], label=self.target[train_idx])
+            val_data = lgb.Dataset(self.train_set.iloc[self.val_idx], label=target[self.val_idx])
+
+            pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "multi_logloss")
+            gbm = lgb.train(param, train_data, valid_sets=[val_data], verbose_eval=False, callbacks=[pruning_callback])
+
+            preds = gbm.predict(self.train_set.iloc[self.val_idx])
+            gt_target = self.target[self.val_idx]
+            gt = np.zeros((len(gt_target), num_class), dtype=float)
+            for _i in range(len(gt)):
+                gt[_i][gt_target[_i]] = 1
+
+#############################
+            print(preds)
+            print(gt)
+            exit()
+
+            loss = sklearn.metrics.log_loss(self.target[self.val_idx], preds)
+            return loss
 
     folds = KFold(n_splits=5, shuffle=True)
     oof = np.zeros([len(train_set), num_class])
@@ -102,23 +105,19 @@ def run_cv(train_set, target, num_class, n_sample):
     # below is to split the entire dataset into train and test sets; Train on train set and evaluate on test set
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
-        best_params, tuning_history = dict(), list()
+        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), direction="minimize")
+        study.optimize(Objective(train_set=train_set, target=target, num_class=num_class,
+                       n_sample=n_sample, train_idx=train_idx, val_idx=val_idx), n_trials=100)
 
-        train_idx = train_idx[:n_sample]
+        print(study.best_params)
 
-        # print(len(train_idx), len(val_idx))
+        exit()
 
-        # print("fold {}".format(fold_))
-        train_data = lgb.Dataset(train_set.iloc[train_idx], label=target[train_idx])
-        val_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
-
-        num_round = 10000
-        # clf = lgb.train(param, train_data, num_round, valid_sets=[val_data], verbose_eval=False)
-        clf = lgb.train(param, train_data, valid_sets=[val_data], verbose_eval=False, early_stopping_rounds=100)
-        oof[val_idx, :] = clf.predict(train_set.iloc[val_idx], num_iteration=clf.best_iteration)
+        oof[val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
         fold_importance_df = pd.DataFrame()
         fold_importance_df["feature"] = train_set.columns
-        fold_importance_df["importance"] = clf.feature_importance()
+        # fold_importance_df["importance"] = clf.feature_importance()
+        fold_importance_df["importance"] = model.feature_importance()
         fold_importance_df["fold"] = fold_ + 1
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
@@ -145,7 +144,7 @@ for i_train_sample in range(len(n_train_sample_arr)):
 
 print(result_pred)
 
-savetxt("result_pred.csv", result_pred, delimiter=',')
+savetxt("baseline_result_pred.csv", result_pred, delimiter=',')
 
 
 

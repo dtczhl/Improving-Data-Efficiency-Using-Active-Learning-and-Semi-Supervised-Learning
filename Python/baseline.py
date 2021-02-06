@@ -1,23 +1,37 @@
-import os
+import numpy as np
 import pandas as pd
 from sklearn import preprocessing
-from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
-import optuna.integration.lightgbm as lgb
-from optuna.integration.lightgbm import LightGBMTuner
-
-import numpy as np
+import optuna
 from numpy import savetxt
-import matplotlib.pyplot as plt
+import os
+
+from MyObjective import MyObjective
+
+
+# ------ Configurations ------
+
+# number of samples
+n_train_sample_arr = range(10, 91, 5)
+# n_train_sample_arr = [90]
+
+# number of runs for each reduced number of samples
+n_run = 20
+
+# optuna number of trails
+n_trial = 500
 
 # data directory
 dire = "../data/PAW FTIR data/"
 
-n_run = 1
+# number of folds for cross-validation. !Do not change
+n_fold = 5
 
-# n_train_sample_arr = range(10, 91, 10)
-n_train_sample_arr = [90]
+# --- End of Configurations ---
+
+np.random.seed(123)
+optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))
@@ -49,34 +63,28 @@ stand = preprocessing.StandardScaler()
 data = stand.fit_transform(train_set)
 le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)
-# print(data)
 
 
 def run_cv(train_set, target, num_class, n_sample):
 
-    param = {
-        'objective': 'multiclass',
-        'num_class': num_class,
-        'metric': 'multi_logloss',
-        "boosting_type": "gbdt",
-        "verbose": -1
-    }
-
-    folds = KFold(n_splits=5, shuffle=True)
+    folds = KFold(n_splits=n_fold, shuffle=True)
     oof = np.zeros([len(train_set), num_class])
     feature_importance_df = pd.DataFrame()
 
     # below is to split the entire dataset into train and test sets; Train on train set and evaluate on test set
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
-        train_idx = train_idx[:n_sample]
-        train_data = lgb.Dataset(train_set.iloc[train_idx], label=target[train_idx])
-        val_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+        print("#fold: {}/{}".format(fold_+1, n_fold))
+        print("\t Best trial: ", end=' ')
 
-        booster = LightGBMTuner(param, train_data, valid_sets=[val_data], verbose_eval=False, early_stopping_rounds=100,
-                                show_progress_bar=False)
-        booster.run()
-        model = booster.get_best_booster()
+        train_idx = train_idx[:n_sample]
+        my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class, train_idx=train_idx,
+                                   val_idx=val_idx)
+
+        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), direction="minimize")
+        study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
+
+        model = my_objective.best_booster
 
         oof[val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
         fold_importance_df = pd.DataFrame()
@@ -86,10 +94,11 @@ def run_cv(train_set, target, num_class, n_sample):
         fold_importance_df["fold"] = fold_ + 1
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
+        print("")
+
     return feature_importance_df, oof
 
 
-# print("Full dataset: {}".format(train_set.shape))
 result_pred = np.zeros([len(n_train_sample_arr), n_run])
 for i_train_sample in range(len(n_train_sample_arr)):
     n_train_sample = n_train_sample_arr[i_train_sample]
@@ -108,7 +117,7 @@ for i_train_sample in range(len(n_train_sample_arr)):
         result_pred[i_train_sample][i_run] = total_pred_correct
 
 print(result_pred)
-
+print("Saving result to baseline_result_pred.csv")
 savetxt("baseline_result_pred.csv", result_pred, delimiter=',')
 
 

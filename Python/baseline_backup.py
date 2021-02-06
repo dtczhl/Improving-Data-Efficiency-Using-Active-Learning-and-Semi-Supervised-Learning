@@ -4,17 +4,12 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
-import lightgbm as lgb
-import optuna
-
-import sklearn.metrics
+import optuna.integration.lightgbm as lgb
+from optuna.integration.lightgbm import LightGBMTuner
 
 import numpy as np
 from numpy import savetxt
 import matplotlib.pyplot as plt
-
-
-optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -59,44 +54,13 @@ target_cf = le.fit_transform(target)
 
 def run_cv(train_set, target, num_class, n_sample):
 
-    class Objective(object):
-        def __init__(self, train_set, target, num_class, n_sample, train_idx, val_idx):
-            self.train_set = train_set
-            self.target = target
-            self.num_class = num_class
-            self.n_sample = n_sample
-            self.train_idx = train_idx
-            self.val_idx = val_idx
-
-        def __call__(self, trial):
-            param = {
-                'objective': 'multiclass',
-                'num_class': self.num_class,
-                'metric': 'multi_logloss',
-                "boosting_type": "gbdt",
-                "verbose": -1
-            }
-
-            train_idx = self.train_idx[:self.n_sample]
-            train_data = lgb.Dataset(self.train_set.iloc[train_idx], label=self.target[train_idx])
-            val_data = lgb.Dataset(self.train_set.iloc[self.val_idx], label=target[self.val_idx])
-
-            pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "multi_logloss")
-            gbm = lgb.train(param, train_data, valid_sets=[val_data], verbose_eval=False, callbacks=[pruning_callback])
-
-            preds = gbm.predict(self.train_set.iloc[self.val_idx])
-            gt_target = self.target[self.val_idx]
-            gt = np.zeros((len(gt_target), num_class), dtype=float)
-            for _i in range(len(gt)):
-                gt[_i][gt_target[_i]] = 1
-
-#############################
-            print(preds)
-            print(gt)
-            exit()
-
-            loss = sklearn.metrics.log_loss(self.target[self.val_idx], preds)
-            return loss
+    param = {
+        'objective': 'multiclass',
+        'num_class': num_class,
+        'metric': 'multi_logloss',
+        "boosting_type": "gbdt",
+        "verbose": -1
+    }
 
     folds = KFold(n_splits=5, shuffle=True)
     oof = np.zeros([len(train_set), num_class])
@@ -105,13 +69,14 @@ def run_cv(train_set, target, num_class, n_sample):
     # below is to split the entire dataset into train and test sets; Train on train set and evaluate on test set
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
-        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), direction="minimize")
-        study.optimize(Objective(train_set=train_set, target=target, num_class=num_class,
-                       n_sample=n_sample, train_idx=train_idx, val_idx=val_idx), n_trials=100)
+        train_idx = train_idx[:n_sample]
+        train_data = lgb.Dataset(train_set.iloc[train_idx], label=target[train_idx])
+        val_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
 
-        print(study.best_params)
-
-        exit()
+        booster = LightGBMTuner(param, train_data, valid_sets=[val_data], verbose_eval=False, early_stopping_rounds=100,
+                                show_progress_bar=False)
+        booster.run()
+        model = booster.get_best_booster()
 
         oof[val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
         fold_importance_df = pd.DataFrame()

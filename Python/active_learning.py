@@ -14,13 +14,13 @@ from Query_Strategy import query_index
 # ------ Configurations ------
 
 # random, uncertainty
-query_strategy = "random"
+query_strategy = "uncertainty"
 
 # do not change
 n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
-n_run = 20
+n_run = 1
 
 # optuna number of trails
 n_trial = 20
@@ -102,9 +102,9 @@ def run_cv(train_set, target, num_class, n_sample_arr):
             queried_index_set.add(sample_index)
 
         my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class,
-                                  train_idx=list(queried_index_set), val_idx=val_idx)
+                                   train_idx=list(queried_index_set), val_idx=val_idx)
 
-        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), direction="minimize")
+        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), sampler=optuna.samplers.RandomSampler(), direction="minimize")
         study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
         model = my_objective.best_booster
         oof[len(queried_index_set), val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
@@ -137,7 +137,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
 
 result_pred = np.zeros([n_run, end_n_sample])
 for i_run in range(n_run):
-    print("------ Round: {}/{}".format(i_run, n_run))
+    print("------ Round: {}/{}".format(i_run+1, n_run))
     result_pred[i_run] = run_cv(train_set, target_cf, len(set(target_cf)), n_sample_arr)
 
 # print(result_pred)

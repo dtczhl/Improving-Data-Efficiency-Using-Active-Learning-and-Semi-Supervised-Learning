@@ -13,11 +13,11 @@ from MyObjective import MyObjective
 # ------ Configurations ------
 
 # number of samples
-# n_train_sample_arr = range(10, 91, 5)
+# n_train_sample_arr = range(10, 91, 10)
 n_train_sample_arr = [90]
 
 # number of runs for each reduced number of samples
-n_run = 20
+n_run = 1
 
 # optuna number of trails
 n_trial = 100
@@ -75,13 +75,12 @@ def run_cv(train_set, target, num_class, n_sample):
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
         print("#fold: {}/{}".format(fold_+1, n_fold))
-        print("\t Best trial: ", end=' ')
 
         train_idx = train_idx[:n_sample]
         my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class, train_idx=train_idx,
                                    val_idx=val_idx)
 
-        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), direction="minimize")
+        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), sampler=optuna.samplers.RandomSampler(), direction="minimize")
         study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
 
         model = my_objective.best_booster
@@ -93,8 +92,6 @@ def run_cv(train_set, target, num_class, n_sample):
         fold_importance_df["importance"] = model.feature_importance()
         fold_importance_df["fold"] = fold_ + 1
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
-
-        print("")
 
     return feature_importance_df, oof
 

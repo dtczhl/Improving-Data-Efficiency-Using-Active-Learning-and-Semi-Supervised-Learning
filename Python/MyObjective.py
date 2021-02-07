@@ -53,5 +53,4 @@ class MyObjective(object):
 
     def callback(self, study, trial):
         if study.best_trial.number == trial.number:
-            # print(study.best_trial.number, end=' ')
             self.best_booster = self.booster

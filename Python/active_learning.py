@@ -8,24 +8,32 @@ from numpy import savetxt
 import os
 
 from MyObjective import MyObjective
+from Query_Strategy import query_index
 
 
 # ------ Configurations ------
+
+# random, uncertainty
+query_strategy = "random"
 
 # do not change
 n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
-n_run = 2
+n_run = 20
 
 # optuna number of trails
-n_trial = 2
+n_trial = 20
 
 # data directory
 dire = "../data/PAW FTIR data/"
 
 # number of folds for cross-validation. !Do not change
 n_fold = 5
+
+# do not change
+start_n_sample = 10
+end_n_sample = 90
 
 # --- End of Configurations ---
 
@@ -67,10 +75,15 @@ le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)
 
 
-def run_cv(train_set, target, num_class, n_sample_arr):
+# def query_index(model, train_set, unqueried_index_set, query_strategy):
+#     if query_strategy.lower() == "random":
+#         return np.random.choice(tuple(unqueried_index_set))
+#     else:
+#         print("Error: unknown strategy", query_strategy)
+#         exit(-1)
 
-    start_n_sample = 10
-    end_n_sample = 90
+
+def run_cv(train_set, target, num_class, n_sample_arr):
 
     folds = KFold(n_splits=n_fold, shuffle=True)
     oof = np.zeros([end_n_sample, len(train_set), num_class])
@@ -96,11 +109,16 @@ def run_cv(train_set, target, num_class, n_sample_arr):
         model = my_objective.best_booster
         oof[len(queried_index_set), val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
 
-        while len(queried_index_set) <= 90:
-            sample_index = np.random.choice(tuple(unqueried_index_set))
+        while len(queried_index_set) < end_n_sample:
+
+            # print("\t #sample: {}/{}".format(len(queried_index_set)+1, end_n_sample))
+
+            # query strategy
+            # sample_index = np.random.choice(tuple(unqueried_index_set))
+            sample_index = query_index(model=my_objective.best_booster, train_set=train_set, unqueried_index_set=unqueried_index_set,
+                                       query_strategy=query_strategy)
             unqueried_index_set.remove(sample_index)
             queried_index_set.add(sample_index)
-
             my_objective.train_idx = list(queried_index_set)
 
             study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
@@ -110,23 +128,24 @@ def run_cv(train_set, target, num_class, n_sample_arr):
     for i_oof in range(len(oof)):
         if i_oof < start_n_sample:
             continue
-        pred = oof[i_oof]
-        cm = confusion_matrix(target, pred)
-        result_pred[i_oof] = sum(cm.diagonal())/np.sum(cm)
+        pred_label = np.argmax(oof[i_oof], axis=1)
+        accuracy = np.sum(pred_label == target) / len(target)
+        result_pred[i_oof] = accuracy
 
-    print(oof)
-
-    print(result_pred)
-    exit()
+    return result_pred
 
 
-
-# print("Full dataset: {}".format(train_set.shape))
-result_pred = np.zeros([len(n_sample_arr), n_run])
+result_pred = np.zeros([n_run, end_n_sample])
 for i_run in range(n_run):
+    print("------ Round: {}/{}".format(i_run, n_run))
     result_pred[i_run] = run_cv(train_set, target_cf, len(set(target_cf)), n_sample_arr)
 
+# print(result_pred)
+# result_pred = np.delete(result_pred, list(range(start_n_sample)), axis=1)
+print(result_pred)
 
+print("Saving result to ./Result/{}_result_pred.csv".format(query_strategy))
+savetxt("./Result/{}_result_pred.csv".format(query_strategy), result_pred, delimiter=',')
 
 
 

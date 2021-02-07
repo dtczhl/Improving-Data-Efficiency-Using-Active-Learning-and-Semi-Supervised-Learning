@@ -13,8 +13,8 @@ from MyObjective import MyObjective
 # ------ Configurations ------
 
 # number of samples
-n_train_sample_arr = range(10, 91, 5)
-# n_train_sample_arr = [90]
+# n_train_sample_arr = range(10, 91, 5)
+n_train_sample_arr = [90]
 
 # number of runs for each reduced number of samples
 n_run = 20
@@ -117,8 +117,8 @@ for i_train_sample in range(len(n_train_sample_arr)):
         result_pred[i_train_sample][i_run] = total_pred_correct
 
 print(result_pred)
-print("Saving result to baseline_result_pred.csv")
-savetxt("baseline_result_pred.csv", result_pred, delimiter=',')
+print("Saving result to ./Result/baseline_result_pred.csv")
+savetxt("./Result/baseline_result_pred.csv", result_pred, delimiter=',')
 
 
 

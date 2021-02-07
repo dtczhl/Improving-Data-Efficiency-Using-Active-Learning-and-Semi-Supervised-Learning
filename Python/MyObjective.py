@@ -14,7 +14,7 @@ class MyObjective(object):
         self.val_idx = val_idx
 
         self.best_booster = None
-        self._booster = None
+        self.booster = None
 
     def __call__(self, trial):
         param = {
@@ -39,7 +39,7 @@ class MyObjective(object):
         pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "multi_logloss")
         gbm = lgb.train(param, train_data, valid_sets=[val_data], verbose_eval=False, callbacks=[pruning_callback])
 
-        self._booster = gbm
+        self.booster = gbm
 
         preds = gbm.predict(self.train_set.iloc[self.val_idx])
         gt_target = self.target[self.val_idx]
@@ -53,5 +53,5 @@ class MyObjective(object):
 
     def callback(self, study, trial):
         if study.best_trial.number == trial.number:
-            print(study.best_trial.number, end=' ')
-            self.best_booster = self._booster
+            # print(study.best_trial.number, end=' ')
+            self.best_booster = self.booster

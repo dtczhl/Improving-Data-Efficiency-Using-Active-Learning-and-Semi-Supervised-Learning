@@ -2,8 +2,8 @@
 
 clear, clc
 
-x = 10:10:90;
-file_path = '../Save/result_pred.csv';
+x = 10:5:90;
+file_path = '../Save/random_result_pred.csv';
 
 data = readmatrix(file_path);
 
@@ -14,8 +14,8 @@ plot(x, mean_val, '*-', 'linewidth', 2)
 plot(x, 0.25*ones(1, length(x)), 'linewidth', 2)
 xlabel('Number of samples for training')
 ylabel('Classification accuracy')
-xlim([10, 90])
-xticks([10:10:90])
+xlim([x(1), x(end)])
+xticks(x)
 yticks([0.2:0.1:1])
 legend('LightGBM', 'Random Guess', 'Location', 'northwest')
 set(gca, 'fontsize', 20)

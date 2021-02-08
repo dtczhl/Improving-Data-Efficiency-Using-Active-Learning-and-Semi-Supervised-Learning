@@ -3,11 +3,13 @@
 clear, clc
 
 x = 10:5:90;
-file_path = '../Save/random_result_pred.csv';
+file_path = '../Save/baseline_result_pred.csv';
 
 data = readmatrix(file_path);
 
-mean_val = mean(data');
+% mean_val = mean(data');
+mean_val = data'
+
 
 figure(1), clf, hold on
 plot(x, mean_val, '*-', 'linewidth', 2)

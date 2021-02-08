@@ -1,0 +1,13 @@
+% compare
+
+clear, clc
+
+
+batch_random_file_path = '../Save/baseline_result_pred.csv';
+al_random_file_path = '../Save/random_result_pred.csv';
+
+batch_random_data = readmatrix(batch_random_file_path);
+
+
+figure(1)
+plot(batch_random_data * 100)

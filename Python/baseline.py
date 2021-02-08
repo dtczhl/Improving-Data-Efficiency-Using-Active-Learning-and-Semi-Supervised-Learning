@@ -13,8 +13,8 @@ from MyObjective import MyObjective
 # ------ Configurations ------
 
 # number of samples
-# n_train_sample_arr = range(10, 91, 10)
-n_train_sample_arr = [90]
+n_train_sample_arr = range(10, 91, 5)
+# n_train_sample_arr = [90]
 
 # number of runs for each reduced number of samples
 n_run = 1

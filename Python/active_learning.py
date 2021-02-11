@@ -20,7 +20,7 @@ query_strategy = "classification_margin"
 n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
-n_run = 1
+n_run = 30
 
 # optuna number of trails
 n_trial = 20
@@ -36,6 +36,8 @@ start_n_sample = 10
 end_n_sample = 90
 
 # --- End of Configurations ---
+
+print("query_strategy={}\nn_run={}\nn_trial={}\nstart_n_sample={}".format(query_strategy, n_run, n_trial, start_n_sample))
 
 np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)

@@ -13,14 +13,14 @@ from MyObjective import MyObjective
 # ------ Configurations ------
 
 # number of samples
-n_train_sample_arr = range(10, 91, 5)
+n_train_sample_arr = range(10, 91, 1)
 # n_train_sample_arr = [90]
 
 # number of runs for each reduced number of samples
-n_run = 1
+n_run = 30
 
 # optuna number of trails
-n_trial = 100
+n_trial = 20
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -29,6 +29,8 @@ dire = "../data/PAW FTIR data/"
 n_fold = 5
 
 # --- End of Configurations ---
+
+print("Batch Random\nn_train_sample_arr={}\nn_run={}\nn_trial={}".format(list(n_train_sample_arr), n_run, n_trial))
 
 np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)

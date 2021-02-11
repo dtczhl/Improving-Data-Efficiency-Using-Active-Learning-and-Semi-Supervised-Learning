@@ -13,8 +13,8 @@ from Query_Strategy import query_index
 
 # ------ Configurations ------
 
-# random, uncertainty
-query_strategy = "uncertainty"
+# random, classification_uncertainty, classification_margin
+query_strategy = "classification_margin"
 
 # do not change
 n_sample_arr = list(range(3, 91))
@@ -73,14 +73,6 @@ data = stand.fit_transform(train_set)
 
 le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)
-
-
-# def query_index(model, train_set, unqueried_index_set, query_strategy):
-#     if query_strategy.lower() == "random":
-#         return np.random.choice(tuple(unqueried_index_set))
-#     else:
-#         print("Error: unknown strategy", query_strategy)
-#         exit(-1)
 
 
 def run_cv(train_set, target, num_class, n_sample_arr):
@@ -144,8 +136,8 @@ for i_run in range(n_run):
 # result_pred = np.delete(result_pred, list(range(start_n_sample)), axis=1)
 print(result_pred)
 
-print("Saving result to ./Result/{}_result_pred.csv".format(query_strategy))
-savetxt("./Result/{}_result_pred.csv".format(query_strategy), result_pred, delimiter=',')
+print("Saving result to ./Result/{}_result.csv".format(query_strategy))
+savetxt("./Result/{}_result.csv".format(query_strategy), result_pred, delimiter=',')
 
 
 

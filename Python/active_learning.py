@@ -13,8 +13,8 @@ from Query_Strategy import query_index
 
 # ------ Configurations ------
 
-# random, classification_uncertainty, classification_margin
-query_strategy = "classification_margin"
+# random, classification_uncertainty, classification_margin, classification_entropy
+query_strategy = "classification_entropy"
 
 # do not change
 n_sample_arr = list(range(3, 91))

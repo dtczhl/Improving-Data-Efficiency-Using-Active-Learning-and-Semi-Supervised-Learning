@@ -2,7 +2,7 @@
 
 clear, clc
 
-query_strategy = 'classification_margin';
+query_strategy = 'classification_entropy';
 
 x = 11:90;
 

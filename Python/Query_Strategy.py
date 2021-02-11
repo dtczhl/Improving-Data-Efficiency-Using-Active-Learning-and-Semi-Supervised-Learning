@@ -1,5 +1,6 @@
 import numpy as np
 import lightgbm as lgb
+from scipy.stats import entropy
 
 
 def query_index(model, train_set, unqueried_index_set, query_strategy):
@@ -17,6 +18,11 @@ def query_index(model, train_set, unqueried_index_set, query_strategy):
         part = np.partition(-prob, 1, axis=1)
         margin = -part[:, 0] + part[:, 1]
         sample_index = unqueried_index_list[np.argmin(margin)]
+        return sample_index
+    elif query_strategy.lower() == "classification_entropy":
+        unqueried_index_list = list(unqueried_index_set)
+        prob = model.predict(train_set.iloc[unqueried_index_list])
+        sample_index = unqueried_index_list[np.argmax(entropy(prob.T))]
         return sample_index
     else:
         print("Error: unknown strategy", query_strategy)

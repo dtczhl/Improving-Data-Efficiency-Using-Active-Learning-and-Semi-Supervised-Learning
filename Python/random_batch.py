@@ -12,14 +12,16 @@ from MyObjective import MyObjective
 
 # ------ Configurations ------
 
-# do not change
-n_sample_arr = list(range(3, 91))
+
+# number of samples
+n_train_sample_arr = range(10, 91, 1)
+# n_train_sample_arr = [90]
 
 # number of runs for each reduced number of samples
-n_run = 20
+n_run = 10
 
 # optuna number of trails
-n_trial = 500
+n_trial = 20
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -28,6 +30,8 @@ dire = "../data/PAW FTIR data/"
 n_fold = 5
 
 # --- End of Configurations ---
+
+print("Batch Random\nn_train_sample_arr={}\nn_run={}\nn_trial={}".format(list(n_train_sample_arr), n_run, n_trial))
 
 np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
@@ -50,19 +54,16 @@ for i_file in range(len(filesnames)):
                 col_value = float(temp[1])
                 df.loc[i_file, col_name] = col_value
         df.loc[i_file, 'group'] = filesnames[i_file][0:3]
-# print(df.shape)
 
 # "group" column refers to Y, like naocl concentration; originally it is 0ppm; I convert it to numeric number 0
 df["group"] = df["group"].apply(lambda x: x.split('-')[0])
 df["group"] = df["group"].astype("int64")  # change to number data type
-# print(df.head())
 
 train_set = df.drop(["group"], axis=1)
 target = df["group"]
 
 stand = preprocessing.StandardScaler()
 data = stand.fit_transform(train_set)
-
 le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)
 
@@ -76,56 +77,21 @@ def run_cv(train_set, target, num_class, n_sample):
     # below is to split the entire dataset into train and test sets; Train on train set and evaluate on test set
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
-        train_X, train_Y = train_set.iloc[train_idx], target[train_idx]
-        test_X, test_Y = train_set.iloc[val_idx], target[val_idx]
+        print("#fold: {}/{}".format(fold_+1, n_fold))
 
-        unqueried_index_set = set(train_idx)
-        queried_index_set = set()
+        train_idx = train_idx[:n_sample]
+        my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class, train_idx=train_idx,
+                                   val_idx=val_idx)
 
-        # pool for training
-        train_X_pool = train_X[0:0]
-        train_y_pool = []
-
-        # randomly select 3 instances for initialization
-        for _ in range(3):
-            sample_index = np.random.choice(tuple(unqueried_index_set))
-            unqueried_index_set.remove(sample_index)
-            queried_index_set.add(sample_index)
-            train_X_pool = train_X_pool.append(train_set.iloc[sample_index])
-            train_y_pool.append(target[sample_index])
-
-        print(list(queried_index_set))
-        exit()
-
-        my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class,
-                                   train_idx=list(queried_index_set), val_idx=val_idx)
-
-        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), direction="minimize")
+        study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), sampler=optuna.samplers.RandomSampler(), direction="minimize")
         study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
 
+        model = my_objective.best_booster
 
-        exit()
-
-        while len(train_X_pool) < n_sample:
-            # select one more instance
-
-            print(len(train_X_pool))
-
-            sample_index = np.random.choice(tuple(unqueried_index_set))
-            unqueried_index_set.remove(sample_index)
-            queried_index_set.add(sample_index)
-            train_X_pool = train_X_pool.append(train_set.iloc[sample_index])
-            train_y_pool.append(target[sample_index])
-
-            train_data = lgb.Dataset(train_X_pool, label=train_y_pool)
-
-
-
-        model = booster.get_best_booster()
-        oof[val_idx, :] = model.predict(test_X, num_iteration=model.best_iteration)
-
+        oof[val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
         fold_importance_df = pd.DataFrame()
         fold_importance_df["feature"] = train_set.columns
+        # fold_importance_df["importance"] = clf.feature_importance()
         fold_importance_df["importance"] = model.feature_importance()
         fold_importance_df["fold"] = fold_ + 1
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
@@ -133,12 +99,7 @@ def run_cv(train_set, target, num_class, n_sample):
     return feature_importance_df, oof
 
 
-# print("Full dataset: {}".format(train_set.shape))
-result_pred = np.zeros([len(n_sample_arr), n_run])
-for i_run in range(n_run):
-    result_pred[i_run] = run_cv(train_set, target_cf, len(set(target_cf)))
-
-
+result_pred = np.zeros([len(n_train_sample_arr), n_run])
 for i_train_sample in range(len(n_train_sample_arr)):
     n_train_sample = n_train_sample_arr[i_train_sample]
 
@@ -156,8 +117,8 @@ for i_train_sample in range(len(n_train_sample_arr)):
         result_pred[i_train_sample][i_run] = total_pred_correct
 
 print(result_pred)
-
-savetxt("result_pred.csv", result_pred, delimiter=',')
+print("Saving result to ./Result/baseline_result_pred.csv")
+savetxt("./Result/baseline_result_pred.csv", result_pred, delimiter=',')
 
 
 

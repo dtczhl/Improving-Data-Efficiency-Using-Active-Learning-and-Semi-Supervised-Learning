@@ -7,20 +7,28 @@ import optuna
 from numpy import savetxt
 import os
 
+import argparse
+from argparse import RawTextHelpFormatter
+
 from MyObjective import MyObjective
 from Query_Strategy import query_index
 
 
 # ------ Configurations ------
 
-# random, classification_uncertainty, classification_margin, classification_entropy
-query_strategy = "classification_entropy"
+# random
+# Uncertainty: classification_uncertainty, classification_margin, classification_entropy
+# Information Density: information_density_[entropy]_[cosine]_[x]
+
+# take in as arguments
+# query_strategy = "random"
 
 # do not change
 n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
-n_run = 30
+# 30
+n_run = 10
 
 # optuna number of trails
 n_trial = 20
@@ -37,10 +45,22 @@ end_n_sample = 90
 
 # --- End of Configurations ---
 
-print("query_strategy={}\nn_run={}\nn_trial={}\nstart_n_sample={}".format(query_strategy, n_run, n_trial, start_n_sample))
-
 np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
+
+help_message = "Active Learning Sampling Method. " \
+    "Supported Methods:\n" \
+    "random;\n" \
+    "Uncertainty: classification_uncertainty, classification_margin, classification_entropy;\n" \
+    "Information Density: information_density_[x]_[y]_[z];"
+parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
+parser.add_argument("sampling_method", type=str, help=help_message)
+args = parser.parse_args()
+
+query_strategy = args.sampling_method
+
+print("query_strategy={}\nn_run={}\nn_trial={}\nstart_n_sample={}"
+      .format(query_strategy, n_run, n_trial, start_n_sample))
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))

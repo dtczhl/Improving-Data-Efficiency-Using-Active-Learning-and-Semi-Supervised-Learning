@@ -1,12 +1,18 @@
 # Data Description
 
 
-n_run = 30
+n_run = 10
 n_trial = 20
 
-baseline
+random_batch
 10:1:90
 
 random
+
 classification_uncertainty
+
 classification_margin
+
+classification_entropy
+
+information_density_entropy_cosine_[float]

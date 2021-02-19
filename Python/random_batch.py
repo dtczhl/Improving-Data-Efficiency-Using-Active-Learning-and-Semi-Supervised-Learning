@@ -18,7 +18,7 @@ n_train_sample_arr = range(10, 91, 1)
 # n_train_sample_arr = [90]
 
 # number of runs for each reduced number of samples
-n_run = 10
+n_run = 5
 
 # optuna number of trails
 n_trial = 20
@@ -64,6 +64,7 @@ target = df["group"]
 
 stand = preprocessing.StandardScaler()
 data = stand.fit_transform(train_set)
+
 le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)
 
@@ -117,8 +118,8 @@ for i_train_sample in range(len(n_train_sample_arr)):
         result_pred[i_train_sample][i_run] = total_pred_correct
 
 print(result_pred)
-print("Saving result to ./Result/baseline_result_pred.csv")
-savetxt("./Result/baseline_result_pred.csv", result_pred, delimiter=',')
+print("Saving result to ./Result/random_batch.csv")
+savetxt("./Result/random_batch_result.csv", result_pred, delimiter=',')
 
 
 

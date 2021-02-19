@@ -17,8 +17,8 @@ from Query_Strategy import query_index
 # ------ Configurations ------
 
 # random
-# Uncertainty: classification_uncertainty, classification_margin, classification_entropy
-# Information Density: information_density_[entropy]_[cosine]_[x]
+# Uncertainty: uncertainty_least_confident, uncertainty_margin, uncertainty_entropy
+# Information Density: density_[entropy]_[cosine]_[x]
 
 # take in as arguments
 # query_strategy = "random"
@@ -28,7 +28,7 @@ n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
 # 30
-n_run = 10
+n_run = 5
 
 # optuna number of trails
 n_trial = 20

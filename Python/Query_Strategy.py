@@ -18,36 +18,33 @@ def query_index(model, train_set, unqueried_index_set, query_strategy):
     if query_strategy.lower() == "random":
         return np.random.choice(tuple(unqueried_index_set))
     # Uncertainty
-    elif query_strategy.lower() == "classification_uncertainty":
+    elif query_strategy.lower() == "uncertainty_least_confident":
         unqueried_index_list = list(unqueried_index_set)
         prob = model.predict(train_set.iloc[unqueried_index_list])
         uncertainty = 1 - prob.max(axis=1)
         sample_index = unqueried_index_list[np.argmax(uncertainty)]
         return sample_index
-    elif query_strategy.lower() == "classification_margin":
+    elif query_strategy.lower() == "uncertainty_margin":
         unqueried_index_list = list(unqueried_index_set)
         prob = model.predict(train_set.iloc[unqueried_index_list])
         part = np.partition(-prob, 1, axis=1)
         margin = -part[:, 0] + part[:, 1]
         sample_index = unqueried_index_list[np.argmin(margin)]
         return sample_index
-    elif query_strategy.lower() == "classification_entropy":
+    elif query_strategy.lower() == "uncertainty_entropy":
         unqueried_index_list = list(unqueried_index_set)
         prob = model.predict(train_set.iloc[unqueried_index_list])
         sample_index = unqueried_index_list[np.argmax(entropy(prob.T))]
         return sample_index
     # Information Density
-    elif query_strategy[0:len("information_density")].lower() == "information_density":
+    elif query_strategy[0:len("density")].lower() == "density":
 
         sub_fields = query_strategy.lower().split("_")
-        base_query_method = sub_fields[2]
-        similarity_metric = sub_fields[3]
-        beta = float(sub_fields[4])
+        base_query_method = sub_fields[1]
+        similarity_metric = sub_fields[2]
+        beta = float(sub_fields[3])
 
         if similar_arr is None:
-
-            print("!!!!!!!!!! Should only be called once")
-
             # construct similar array
             similar_arr = np.zeros(len(train_set))
 
@@ -66,12 +63,26 @@ def query_index(model, train_set, unqueried_index_set, query_strategy):
 
             similar_arr = np.power(similar_arr, beta)
 
-        if base_query_method.lower() == "entropy":
-
+        if base_query_method.lower() == "least_confident":
             unqueried_index_list = list(unqueried_index_set)
             prob = model.predict(train_set.iloc[unqueried_index_list])
-            entropy_temp = entropy(prob.T)
-            information_density = np.multiply(entropy_temp, similar_arr[unqueried_index_list])
+            uncertainty = 1 - prob.max(axis=1)
+            information_density = np.multiply(uncertainty, similar_arr[unqueried_index_list])
+            sample_index = unqueried_index_list[np.argmax(information_density)]
+            return sample_index
+        elif base_query_method.lower() == "margin":
+            unqueried_index_list = list(unqueried_index_set)
+            prob = model.predict(train_set.iloc[unqueried_index_list])
+            part = np.partition(-prob, 1, axis=1)
+            margin = -part[:, 0] + part[:, 1]
+            information_density = np.multiply(margin, similar_arr[unqueried_index_list])
+            sample_index = unqueried_index_list[np.argmax(information_density)]
+            return sample_index
+        elif base_query_method.lower() == "entropy":
+            unqueried_index_list = list(unqueried_index_set)
+            prob = model.predict(train_set.iloc[unqueried_index_list])
+            uncertainty = entropy(prob.T)
+            information_density = np.multiply(uncertainty, similar_arr[unqueried_index_list])
             sample_index = unqueried_index_list[np.argmax(information_density)]
             return sample_index
         else:

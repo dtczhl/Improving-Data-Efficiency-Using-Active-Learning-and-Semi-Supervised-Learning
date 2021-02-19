@@ -1,7 +1,7 @@
 # Data Description
 
 
-n_run = 10
+n_run = 5
 n_trial = 20
 
 random_batch

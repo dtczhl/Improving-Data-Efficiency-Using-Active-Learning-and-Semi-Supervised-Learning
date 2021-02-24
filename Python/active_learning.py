@@ -17,8 +17,8 @@ from Query_Strategy import query_index
 # ------ Configurations ------
 
 # random
-# Uncertainty: uncertainty_least_confident, uncertainty_margin, uncertainty_entropy
-# Information Density: density_[entropy]_[cosine]_[x]
+# Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy
+# Information Density: density_[leastConfident | entropy]_[cosine]_[x]
 
 # take in as arguments
 # query_strategy = "random"
@@ -28,7 +28,7 @@ n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
 # 30
-n_run = 5
+n_run = 1
 
 # optuna number of trails
 n_trial = 20
@@ -50,9 +50,10 @@ optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 help_message = "Active Learning Sampling Method. " \
     "Supported Methods:\n" \
+    "batch_random:\n" \
     "random;\n" \
-    "Uncertainty: classification_uncertainty, classification_margin, classification_entropy;\n" \
-    "Information Density: information_density_[x]_[y]_[z];"
+    "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
+    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine]_[x];"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
@@ -125,19 +126,33 @@ def run_cv(train_set, target, num_class, n_sample_arr):
 
         while len(queried_index_set) < end_n_sample:
 
-            # print("\t #sample: {}/{}".format(len(queried_index_set)+1, end_n_sample))
+            print("\t #sample: {}/{}".format(len(queried_index_set)+1, end_n_sample))
 
-            # query strategy
-            # sample_index = np.random.choice(tuple(unqueried_index_set))
-            sample_index = query_index(model=my_objective.best_booster, train_set=train_set, unqueried_index_set=unqueried_index_set,
-                                       query_strategy=query_strategy)
-            unqueried_index_set.remove(sample_index)
-            queried_index_set.add(sample_index)
-            my_objective.train_idx = list(queried_index_set)
+            # for batch random, create new object
+            if query_strategy.lower() == "batch_random":
+                sample_index = np.random.choice(tuple(unqueried_index_set))
+                unqueried_index_set.remove(sample_index)
+                queried_index_set.add(sample_index)
 
-            study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
-            model = my_objective.best_booster
-            oof[len(queried_index_set)-1, val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
+                my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class,
+                                           train_idx=list(queried_index_set), val_idx=val_idx)
+                # fair compare with incremental version
+                study = optuna.create_study(pruner=optuna.pruners.MedianPruner(),
+                                            sampler=optuna.samplers.RandomSampler(), direction="minimize")
+                study.optimize(my_objective, n_trials=(len(queried_index_set)-start_n_sample+1)*n_trial, callbacks=[my_objective.callback])
+                model = my_objective.best_booster
+                oof[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx],
+                                                                            num_iteration=model.best_iteration)
+            else:
+                sample_index = query_index(model=my_objective.best_booster, train_set=train_set,
+                                           unqueried_index_set=unqueried_index_set,
+                                           query_strategy=query_strategy)
+                unqueried_index_set.remove(sample_index)
+                queried_index_set.add(sample_index)
+                my_objective.train_idx = list(queried_index_set)
+                study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
+                model = my_objective.best_booster
+                oof[len(queried_index_set)-1, val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
 
     for i_oof in range(len(oof)):
         if i_oof < start_n_sample:
@@ -158,6 +173,8 @@ for i_run in range(n_run):
 # result_pred = np.delete(result_pred, list(range(start_n_sample)), axis=1)
 print(result_pred)
 
+# do not want dot in filenames
+query_strategy = query_strategy.replace('.', '')
 print("Saving result to ./Result/{}_result.csv".format(query_strategy))
 savetxt("./Result/{}_result.csv".format(query_strategy), result_pred, delimiter=',')
 

@@ -2,42 +2,58 @@
 
 clear, clc
 
+% al = Active Learning
 
-batch_random_file_path = '../Save/1/batch_random_result.csv';
-random_file_path = '../Save/1/random_result.csv';
-uncertainty_least_confident_file_path = '../Save/1/classification_uncertainty_result.csv';
-uncertainty_margin_file_path = '../Save/1/classification_margin_result.csv';
-uncertainty_entropy_file_path = '../Save/1/classification_entropy_result.csv';
-density_entropy_cosine_05 = '../Save/1/information_density_entropy_cosine_0.5_result.csv';
-density_entropy_cosine_1 = '../Save/1/information_density_entropy_cosine_1_result.csv';
-density_entropy_cosine_2 = '../Save/1/information_density_entropy_cosine_2_result.csv';
+al_strategies = struct( ...
+    'batch_random', 'Batch Random', ...
+    'random', 'Random', ...
+    'uncertainty_leastConfident', 'Uncertainty: Least Confident', ...
+    'uncertainty_margin', 'Uncertainty: Margin', ...
+    'uncertainty_entropy', 'Uncertainty: Entropy', ...
+    'density_leastConfident_cosine_05', 'Density: Least Confident + Cosine + \beta: 0.5', ...
+    'density_leastConfident_cosine_1', 'Density: Least Confident + Cosine + \beta: 1', ...
+    'density_leastConfident_cosine_2', 'Density: Least Confident + Cosine + \beta 2', ...
+    'density_margin_cosine_05', 'Density: Margin + Cosine + \beta: 0.5', ...
+    'density_margin_cosine_1', 'Density: Margin + Cosine + \beta: 1', ...
+    'density_margin_cosine_2', 'Density: Margin + Cosine + \beta: 2', ...
+    'density_entropy_cosine_05', 'Density: Entropy + Cosine + \beta: 0.5', ...
+    'density_entropy_cosine_1', 'Density: Entropy + Cosine + \beta: 1', ...
+    'density_entropy_cosine_2', 'Density: Entropy  + Cosine + \beta: 2');
+
+data_file_prefix = '../Save/1/';
+data_file_suffix = '_result.csv';
 
 
+fields = fieldnames(al_strategies);
 
-batch_random_data = readmatrix(batch_random_file_path);
-batch_random_data = mean(batch_random_data, 2);
+my_legend = {};
 
-random_data = readmatrix(random_file_path);
-random_data = mean(random_data);
+figure(1), clf, hold on
+for k = 1:numel(fields)
+    
+    if strcmp(fields{k}, 'batch_random') == 1
+        continue;
+    end
+    
+    filename = fullfile(data_file_prefix, strcat(fields{k}, data_file_suffix));
+    data = readmatrix(filename);
+    data = mean(data);
+    
+    my_legend = [my_legend, al_strategies.(fields{k})];
+    
+    plot([11:90], data(11:end)*100, 'linewidth', 3)
+    
+end
+legend(my_legend, 'location', 'southeast')
+set(gca, 'fontsize', 24, 'ygrid', 'on', 'xgrid', 'on')
+xlabel('Number of samples for training')
+ylabel('Accuracy (%)')
+xticks(10:10:90)
+yticks(20:10:100)
+hold off
 
-uncertainty_least_confident_data = readmatrix(uncertainty_least_confident_file_path);
-uncertainty_least_confident_data = mean(uncertainty_least_confident_data);
 
-uncertainty_margin_data = readmatrix(uncertainty_margin_file_path);
-uncertainty_margin_data = mean(uncertainty_margin_data);
-
-uncertainty_entropy_data = readmatrix(uncertainty_entropy_file_path);
-uncertainty_entropy_data = mean(uncertainty_entropy_data);
-
-density_entropy_cosine_05_data = readmatrix(density_entropy_cosine_05);
-density_entropy_cosine_05_data = mean(density_entropy_cosine_05_data);
-
-density_entropy_cosine_1_data = readmatrix(density_entropy_cosine_1);
-density_entropy_cosine_1_data = mean(density_entropy_cosine_1_data);
-
-density_entropy_cosine_2_data = readmatrix(density_entropy_cosine_2);
-density_entropy_cosine_2_data = mean(density_entropy_cosine_2_data);
-
+return
 
 figure(1), clf, hold on
 plot([10:90], batch_random_data * 100, '*-','linewidth', 3)

@@ -1,18 +1,14 @@
 # Data Description
 
 
-n_run = 5
-n_trial = 20
 
-random_batch
-10:1:90
+Folders
 
-random
+* 1
+    ```python
+    n_run = 5
+    n_trial = 20
+    ```
 
-classification_uncertainty
 
-classification_margin
 
-classification_entropy
-
-information_density_entropy_cosine_[float]

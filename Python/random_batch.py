@@ -13,12 +13,12 @@ from MyObjective import MyObjective
 # ------ Configurations ------
 
 
-# number of samples
+# number of samples. Must starts with 10, no larger than 90!!!
 n_train_sample_arr = range(10, 91, 1)
-# n_train_sample_arr = [90]
+n_train_sample_arr = [10, 90]
 
 # number of runs for each reduced number of samples
-n_run = 5
+n_run = 1
 
 # optuna number of trails
 n_trial = 20
@@ -30,6 +30,8 @@ dire = "../data/PAW FTIR data/"
 n_fold = 5
 
 # --- End of Configurations ---
+
+n_trial_factor = n_trial
 
 print("Batch Random\nn_train_sample_arr={}\nn_run={}\nn_trial={}".format(list(n_train_sample_arr), n_run, n_trial))
 
@@ -78,9 +80,10 @@ def run_cv(train_set, target, num_class, n_sample):
     # below is to split the entire dataset into train and test sets; Train on train set and evaluate on test set
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
-        print("#fold: {}/{}".format(fold_+1, n_fold))
-
         train_idx = train_idx[:n_sample]
+
+        print("#fold: {}/{}, n_trail: {}, n_train_size: {}".format(fold_+1, n_fold, n_trial, len(train_idx)))
+
         my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class, train_idx=train_idx,
                                    val_idx=val_idx)
 
@@ -100,9 +103,12 @@ def run_cv(train_set, target, num_class, n_sample):
     return feature_importance_df, oof
 
 
-result_pred = np.zeros([len(n_train_sample_arr), n_run])
+result_pred = np.zeros([n_run, 91])
 for i_train_sample in range(len(n_train_sample_arr)):
     n_train_sample = n_train_sample_arr[i_train_sample]
+
+    # to be comparable to iterative version
+    n_trial = (n_train_sample - 9) * n_trial_factor
 
     for i_run in range(n_run):
 
@@ -110,12 +116,13 @@ for i_train_sample in range(len(n_train_sample_arr)):
 
         feature_importance_df_cf, oof_cf = run_cv(train_set, target_cf, len(set(target_cf)), n_train_sample)
         pred = np.zeros([len(oof_cf)])
+        print(len(oof_cf))
         for i in range(len(oof_cf)):
             pred[i] = np.argmax(oof_cf[i])
         cm = confusion_matrix(target_cf, pred)
         total_pred_correct = sum(cm.diagonal())/np.sum(cm)
 
-        result_pred[i_train_sample][i_run] = total_pred_correct
+        result_pred[i_run][n_train_sample] = total_pred_correct
 
 print(result_pred)
 print("Saving result to ./Result/random_batch.csv")

@@ -3,10 +3,6 @@ import lightgbm as lgb
 from scipy.stats import entropy
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Supported query strategy
-# random
-# Uncertainty: classification_uncertainty, classification_margin, classification_entropy
-# Information Density: information_density_[entropy]_[cosine]_[x]
 
 similar_arr = None
 
@@ -18,7 +14,7 @@ def query_index(model, train_set, unqueried_index_set, query_strategy):
     if query_strategy.lower() == "random":
         return np.random.choice(tuple(unqueried_index_set))
     # Uncertainty
-    elif query_strategy.lower() == "uncertainty_least_confident":
+    elif query_strategy.lower() == "uncertainty_leastconfident":
         unqueried_index_list = list(unqueried_index_set)
         prob = model.predict(train_set.iloc[unqueried_index_list])
         uncertainty = 1 - prob.max(axis=1)
@@ -63,7 +59,7 @@ def query_index(model, train_set, unqueried_index_set, query_strategy):
 
             similar_arr = np.power(similar_arr, beta)
 
-        if base_query_method.lower() == "least_confident":
+        if base_query_method.lower() == "leastconfident":
             unqueried_index_list = list(unqueried_index_set)
             prob = model.predict(train_set.iloc[unqueried_index_list])
             uncertainty = 1 - prob.max(axis=1)

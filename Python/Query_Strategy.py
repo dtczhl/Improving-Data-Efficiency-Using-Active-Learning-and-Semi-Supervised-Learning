@@ -50,7 +50,18 @@ def query_index(model, train_set, unqueried_index_set, query_strategy):
                     for j_sample in range(len(train_set)):
                         if i_sample == j_sample:
                             continue
-                        sim_value = np.squeeze(cosine_similarity(train_set.iloc[i_sample].to_numpy().reshape(1, -1),                                               train_set.iloc[j_sample].to_numpy().reshape(1, -1)))[()]
+                        sim_value = np.squeeze(cosine_similarity(train_set.iloc[i_sample].to_numpy().reshape(1, -1),
+                                                                 train_set.iloc[j_sample].to_numpy().reshape(1, -1)))[()]
+                        temp_sum = temp_sum + sim_value
+                    similar_arr[i_sample] = temp_sum / (len(train_set) - 1)
+            elif similarity_metric.lower() == "pearson":
+                for i_sample in range(len(train_set)):
+                    temp_sum = 0
+                    for j_sample in range(len(train_set)):
+                        if i_sample == j_sample:
+                            continue
+                        sim_value = np.corrcoef(train_set.iloc[i_sample].to_numpy().reshape(1, -1),
+                                                train_set.iloc[j_sample].to_numpy().reshape(1, -1))[0][1]
                         temp_sum = temp_sum + sim_value
                     similar_arr[i_sample] = temp_sum / (len(train_set) - 1)
             else:

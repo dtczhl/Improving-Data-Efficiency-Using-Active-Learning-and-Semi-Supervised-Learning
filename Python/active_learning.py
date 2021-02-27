@@ -53,7 +53,7 @@ help_message = "Active Learning Sampling Method. " \
     "batch_random:\n" \
     "random;\n" \
     "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
-    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine]_[x];"
+    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson]_[x];"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()

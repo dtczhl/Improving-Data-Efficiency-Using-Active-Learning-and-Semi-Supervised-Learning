@@ -17,7 +17,8 @@ class MyObjective(object):
         self.booster = None
 
     def __call__(self, trial):
-        param = {
+
+        self.param = {
             'objective': 'multiclass',
             'num_class': self.num_class,
             'metric': 'multi_logloss',
@@ -36,8 +37,8 @@ class MyObjective(object):
         train_data = lgb.Dataset(self.train_set.iloc[train_idx], label=self.target[train_idx])
         val_data = lgb.Dataset(self.train_set.iloc[self.val_idx], label=self.target[self.val_idx])
 
-        pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "multi_logloss")
-        gbm = lgb.train(param, train_data, valid_sets=[val_data], verbose_eval=False, callbacks=[pruning_callback])
+        self.pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "multi_logloss")
+        gbm = lgb.train(self.param, train_data, valid_sets=[val_data], verbose_eval=False, callbacks=[self.pruning_callback])
 
         self.booster = gbm
 
@@ -54,3 +55,4 @@ class MyObjective(object):
     def callback(self, study, trial):
         if study.best_trial.number == trial.number:
             self.best_booster = self.booster
+

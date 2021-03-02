@@ -28,7 +28,7 @@ n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
 # 30
-n_run = 1
+n_run = 5
 
 # optuna number of trails
 n_trial = 20
@@ -53,7 +53,7 @@ help_message = "Active Learning Sampling Method. " \
     "batch_random:\n" \
     "random;\n" \
     "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
-    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson]_[x];"
+    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson|euclidean]_[x];"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
@@ -141,8 +141,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
                                             sampler=optuna.samplers.RandomSampler(), direction="minimize")
                 study.optimize(my_objective, n_trials=(len(queried_index_set)-start_n_sample+1)*n_trial, callbacks=[my_objective.callback])
                 model = my_objective.best_booster
-                oof[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx],
-                                                                            num_iteration=model.best_iteration)
+                oof[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx])
             else:
                 sample_index = query_index(model=my_objective.best_booster, train_set=train_set,
                                            unqueried_index_set=unqueried_index_set,
@@ -152,7 +151,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
                 my_objective.train_idx = list(queried_index_set)
                 study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
                 model = my_objective.best_booster
-                oof[len(queried_index_set)-1, val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
+                oof[len(queried_index_set)-1, val_idx, :] = model.predict(train_set.iloc[val_idx])
 
     for i_oof in range(len(oof)):
         if i_oof < start_n_sample:

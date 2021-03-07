@@ -16,9 +16,12 @@ from Query_Strategy import query_index
 
 # ------ Configurations ------
 
+# batch_random
 # random
 # Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy
 # Information Density: density_[leastConfident | entropy]_[cosine]_[x]
+# Minimizing Expected Error: minimize_expected_error
+
 
 # take in as arguments
 # query_strategy = "random"
@@ -45,7 +48,7 @@ end_n_sample = 90
 
 # --- End of Configurations ---
 
-np.random.seed(123)
+# np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 help_message = "Active Learning Sampling Method. " \
@@ -139,10 +142,16 @@ def run_cv(train_set, target, num_class, n_sample_arr):
                 # fair compare with incremental version
                 study = optuna.create_study(pruner=optuna.pruners.MedianPruner(),
                                             sampler=optuna.samplers.RandomSampler(), direction="minimize")
-                study.optimize(my_objective, n_trials=(len(queried_index_set)-start_n_sample+1)*n_trial, callbacks=[my_objective.callback])
+                # n_trial_temp = (len(queried_index_set)-start_n_sample+1)*n_trial
+                # n_trial_temp = n_trial_temp if n_trial_temp <= 1000 else 1000
+                study.optimize(my_objective, n_trials=10*n_trial, callbacks=[my_objective.callback])
                 model = my_objective.best_booster
                 oof[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx])
+            elif query_strategy.lower() == "minimize_expected_error":
+
+                pass
             else:
+                # Uncertainty based
                 sample_index = query_index(model=my_objective.best_booster, train_set=train_set,
                                            unqueried_index_set=unqueried_index_set,
                                            query_strategy=query_strategy)

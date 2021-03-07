@@ -18,6 +18,9 @@ from copy import deepcopy
 import argparse
 from argparse import RawTextHelpFormatter
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from MyObjective import MyObjective
 from Query_Strategy import query_index
 
@@ -33,10 +36,11 @@ from Query_Strategy import query_index
 n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
-n_run = 1
+n_run = 5
 
-# target distinctive numbers >
-n_h_different_threshold = 2
+# target distinctive numbers <=
+# 0: keep all
+n_h_different_threshold = 0
 
 # optuna number of trails
 n_trial = 20
@@ -65,8 +69,8 @@ args = parser.parse_args()
 
 query_strategy = args.sampling_method
 
-print("query_strategy={}\nn_run={}\nn_trial={}\nstart_n_sample={}"
-      .format(query_strategy, n_run, n_trial, start_n_sample))
+print("query_strategy={}\nn_run={}\nn_trial={}\nstart_n_sample={}\nn_h_different_threshold={}"
+      .format(query_strategy, n_run, n_trial, start_n_sample, n_h_different_threshold))
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))
@@ -196,7 +200,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
 
                 h_different_set = {model_1_pred, model_2_pred, model_3_pred, model_4_pred}
 
-                if len(h_different_set) > n_h_different_threshold:
+                if len(h_different_set) <= n_h_different_threshold:
                     print("Discard")
                     keep_queried_index_set.remove(sample_index)
                 else:
@@ -246,14 +250,17 @@ print(result_keep_accuracy)
 # do not want dot in filenames
 query_strategy = query_strategy.replace('.', '')
 
-print("Saving accuracy to ./Result/{}_result.csv".format(query_strategy))
-savetxt("./Result/{}_result.csv".format(query_strategy), result_pred, delimiter=',')
+filename = "./Result/{}_result_{}.csv".format(query_strategy, n_h_different_threshold)
+print("Saving accuracy to", filename)
+savetxt(filename, result_pred, delimiter=',')
 
-print("Saving keep size to ./Result/{}_keep_size.csv".format(query_strategy))
-savetxt("./Result/{}_keep_size.csv".format(query_strategy), result_keep_size, delimiter=',')
+filename = "./Result/{}_keep_size_{}.csv".format(query_strategy, n_h_different_threshold)
+print("Saving keep size to", filename)
+savetxt(filename, result_keep_size, delimiter=',')
 
-print("Saving keep accuracy size to ./Result/{}_keep_accuracy.csv".format(query_strategy))
-savetxt("./Result/{}_keep_accuracy.csv".format(query_strategy), result_keep_accuracy, delimiter=',')
+filename = "./Result/{}_keep_accuracy_{}.csv".format(query_strategy, n_h_different_threshold)
+print("Saving keep accuracy to", filename)
+savetxt(filename, result_keep_accuracy, delimiter=',')
 
 
 

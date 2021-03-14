@@ -10,17 +10,15 @@ import os
 import argparse
 from argparse import RawTextHelpFormatter
 
+from copy import deepcopy
+
 from MyObjective import MyObjective
 from Query_Strategy import query_index
 
 
 # ------ Configurations ------
 
-# batch_random
-# random
-# Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy
-# Information Density: density_[leastConfident | entropy]_[cosine]_[x]
-# Minimizing Expected Error: minimize_expected_error
+# self_train
 
 
 # take in as arguments
@@ -51,17 +49,20 @@ end_n_sample = 90
 # np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 
-help_message = "Active Learning Sampling Method. " \
+help_message = "Semi-supervised Learning Method. " \
     "Supported Methods:\n" \
-    "batch_random:\n" \
-    "random;\n" \
-    "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
-    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson|euclidean]_[x];"
+    "Self Training: selfTrain_[random|leastConfident|entropy]"
+
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
 
 query_strategy = args.sampling_method
+
+sub_fields = query_strategy.lower().split("_")
+base_method = sub_fields[0]
+utility_metric = sub_fields[1]
+
 
 print("query_strategy={}\nn_run={}\nn_trial={}\nstart_n_sample={}"
       .format(query_strategy, n_run, n_trial, start_n_sample))
@@ -131,8 +132,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
 
             print("\t #sample: {}/{}".format(len(queried_index_set)+1, end_n_sample))
 
-            # for batch random, create new object
-            if query_strategy.lower() == "batch_random":
+            if base_method.lower() == "selfTrain":
                 sample_index = np.random.choice(tuple(unqueried_index_set))
                 unqueried_index_set.remove(sample_index)
                 queried_index_set.add(sample_index)
@@ -145,19 +145,36 @@ def run_cv(train_set, target, num_class, n_sample_arr):
                 # n_trial_temp = (len(queried_index_set)-start_n_sample+1)*n_trial
                 # n_trial_temp = n_trial_temp if n_trial_temp <= 1000 else 1000
                 study.optimize(my_objective, n_trials=10*n_trial, callbacks=[my_objective.callback])
+                # model = my_objective.best_booster
+
+                # incrementally select data instances
+                queried_index_set_copy = deepcopy(queried_index_set)
+                unqueried_index_set_copy = deepcopy(unqueried_index_set)
+                target_copy = deepcopy(target)
+
+                while len(unqueried_index_set_copy) > 0:
+
+                    print("\t\t ------- len(unqueried_index_set_copy) = {} ------".format(len(unqueried_index_set_copy)))
+
+                    sample_index = query_index(objective=my_objective, train_set=train_set,
+                                               queried_index_set=None,
+                                               unqueried_index_set=unqueried_index_set_copy,
+                                               query_strategy="uncertainty_"+utility_metric, target=None)
+                    target_copy[sample_index] = np.argmax(np.squeeze(model.predict(train_set.iloc[sample_index])))
+                    unqueried_index_set_copy.remove(sample_index)
+                    queried_index_set_copy.add(sample_index)
+
+                    my_objective.train_idx = list(queried_index_set_copy)
+                    my_objective.target = target_copy
+
+                    study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
+
                 model = my_objective.best_booster
                 oof[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx])
             else:
-                sample_index = query_index(objective=my_objective, train_set=train_set,
-                                           queried_index_set=queried_index_set,
-                                           unqueried_index_set=unqueried_index_set,
-                                           query_strategy=query_strategy, target=target)
-                unqueried_index_set.remove(sample_index)
-                queried_index_set.add(sample_index)
-                my_objective.train_idx = list(queried_index_set)
-                study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
-                model = my_objective.best_booster
-                oof[len(queried_index_set)-1, val_idx, :] = model.predict(train_set.iloc[val_idx])
+                print("unknown base_query_method: {}".format(base_method))
+                exit(-1)
+
 
     for i_oof in range(len(oof)):
         if i_oof < start_n_sample:

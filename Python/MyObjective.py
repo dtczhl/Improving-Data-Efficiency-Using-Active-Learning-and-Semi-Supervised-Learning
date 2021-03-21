@@ -24,13 +24,18 @@ class MyObjective(object):
             'metric': 'multi_logloss',
             "boosting_type": "gbdt",
             "verbose": -1,
-            "lambda_l1": trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True),
-            "lambda_l2": trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True),
-            "num_leaves": trial.suggest_int("num_leaves", 2, 512),
-            "feature_fraction": trial.suggest_float("feature_fraction", 0.1, 1.0),
-            "bagging_fraction": trial.suggest_float("bagging_fraction", 0.1, 1.0),
-            "bagging_freq": trial.suggest_int("bagging_freq", 1, 10),
-            "min_child_samples": trial.suggest_int("min_child_samples", 1, 100)
+            "bagging_freq": 1,
+            # # "lambda_l1": 0.2634,
+            # # "max_depth": 10,
+            # # "min_data_in_leaf": 2,
+            "lambda_l1": trial.suggest_float("lambda_l1", 0.1, 0.5, log=True),
+            "lambda_l2": trial.suggest_float("lambda_l2", 0.1, 0.5, log=True),
+            "num_leaves": trial.suggest_int("num_leaves", 128, 256),
+            "feature_fraction": trial.suggest_float("feature_fraction", 0.8, 1.0),
+            "bagging_fraction": trial.suggest_float("bagging_fraction", 0.8, 1.0),
+            # "bagging_freq": trial.suggest_int("bagging_freq", 1, 2),
+            # "bagging_freq": 1,
+            # "min_child_samples": trial.suggest_int("min_child_samples", 10, 20)
         }
 
         train_idx = self.train_idx

@@ -6,41 +6,85 @@ from copy import deepcopy
 import optuna
 
 # !!!!!!!!!!
-n_trial = 20
+n_trial = 1
 
 # similar_arr = None
 
 
+def calculate_utility(prob, strategy):
+    if strategy == "confident":
+        pred_confident = prob.max(axis=1)
+        return pred_confident
+    elif strategy == "margin":
+        part = np.partition(-prob, 1, axis=1)
+        margin_diff = -part[:, 0] + part[:, 1]
+        return margin_diff
+    elif strategy == "entropy":
+        entropy_info = entropy(prob.T)
+        return entropy_info
+    else:
+        print("-------- Error: Unknown strategy={}".format(strategy))
+        exit(-1)
+
+
 def query_index(objective, train_set, queried_index_set, unqueried_index_set, query_strategy, target):
 
-    global similar_arr
+    # global similar_arr
 
     model = objective.best_booster
 
     if query_strategy.lower() == "random":
         return np.random.choice(tuple(unqueried_index_set))
-    # Uncertainty
-    elif query_strategy.lower() == "uncertainty_leastconfident":
-        unqueried_index_list = list(unqueried_index_set)
-        prob = model.predict(train_set.iloc[unqueried_index_list])
-        uncertainty = 1 - prob.max(axis=1)
-        sample_index = unqueried_index_list[np.argmax(uncertainty)]
-        return sample_index
-    elif query_strategy.lower() == "uncertainty_margin":
-        unqueried_index_list = list(unqueried_index_set)
-        prob = model.predict(train_set.iloc[unqueried_index_list])
-        part = np.partition(-prob, 1, axis=1)
-        margin = -part[:, 0] + part[:, 1]
-        sample_index = unqueried_index_list[np.argmin(margin)]
-        return sample_index
-    elif query_strategy.lower() == "uncertainty_entropy":
-        unqueried_index_list = list(unqueried_index_set)
-        prob = model.predict(train_set.iloc[unqueried_index_list])
-        sample_index = unqueried_index_list[np.argmax(entropy(prob.T))]
-        return sample_index
-    # Information Density
-    elif query_strategy[0:len("density")].lower() == "density":
 
+    # Uncertainty Sampling
+    elif query_strategy.lower().startswith("uncertainty"):
+        sub_fields = query_strategy.lower().split("_")
+        base_query_method = sub_fields[1]
+
+        unqueried_index_list = list(unqueried_index_set)
+        prob = model.predict(train_set.iloc[unqueried_index_list])
+
+        if base_query_method == "leastconfident":
+            utility = calculate_utility(prob, "confident")
+            sample_index_unordered = np.argmin(utility)
+            sample_index = unqueried_index_list[sample_index_unordered]
+            return sample_index
+        elif base_query_method == "margin":
+            utility = calculate_utility(prob, "margin")
+            sample_index_unordered = np.argmin(utility)
+            sample_index = unqueried_index_list[sample_index_unordered]
+            return sample_index
+        elif base_query_method == "entropy":
+            utility = calculate_utility(prob, "entropy")
+            sample_index_unordered = np.argmax(utility)
+            sample_index = unqueried_index_list[sample_index_unordered]
+            return sample_index
+        else:
+            print("****** Error: Unknown base_query_method={}".format(base_query_method))
+            exit(-1)
+
+
+    # elif query_strategy.lower() == "uncertainty_leastconfident":
+    #     unqueried_index_list = list(unqueried_index_set)
+    #     prob = model.predict(train_set.iloc[unqueried_index_list])
+    #     uncertainty = 1 - prob.max(axis=1)
+    #     sample_index = unqueried_index_list[np.argmax(uncertainty)]
+    #     return sample_index
+    # elif query_strategy.lower() == "uncertainty_margin":
+    #     unqueried_index_list = list(unqueried_index_set)
+    #     prob = model.predict(train_set.iloc[unqueried_index_list])
+    #     part = np.partition(-prob, 1, axis=1)
+    #     margin = -part[:, 0] + part[:, 1]
+    #     sample_index = unqueried_index_list[np.argmin(margin)]
+    #     return sample_index
+    # elif query_strategy.lower() == "uncertainty_entropy":
+    #     unqueried_index_list = list(unqueried_index_set)
+    #     prob = model.predict(train_set.iloc[unqueried_index_list])
+    #     sample_index = unqueried_index_list[np.argmax(entropy(prob.T))]
+    #     return sample_index
+    # Information Density
+    # elif query_strategy[0:len("density")].lower() == "density":
+    elif query_strategy.lower().startswith("density"):
         sub_fields = query_strategy.lower().split("_")
         base_query_method = sub_fields[1]
         similarity_metric = sub_fields[2]

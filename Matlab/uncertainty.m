@@ -7,18 +7,19 @@ line_spec = {'.-', 'o-', ':', '-.'};
 % al = Active Learning
 
 al_strategies = struct( ...
-    'batch_random_unfair', 'Baseline', ...
     'random', 'Random', ...
-    'uncertainty_leastConfident', 'Least Confident', ...
-    'uncertainty_entropy', 'Entropy');
+    'batch_random', 'Batch Random', ...
+    'uncertainty_leastConfident', 'Least Confident');
 
-data_file_prefix = '../Save/1/';
-data_file_suffix = '_result.csv';
+data_file_prefix = '../Python/Result/';
+data_file_suffix = '.csv';
 
 
 fields = fieldnames(al_strategies);
 
 my_legend = {};
+
+accuray_threshold = 0.8;
 
 figure(1), clf, hold on
 set(gcf, 'position', [500, 500, 1000, 700])
@@ -31,14 +32,25 @@ for k = 1:numel(fields)
         data = data';
     end
     
-    data = mean(data);
+    
+    n_ok_data = [size(data, 1), 0];
+    
+%     data = data(data(:, end) > accuray_threshold, :);
+    
+    n_ok_data(2) = size(data, 1)
+
+    mean_data = mean(data);
+    
+%     error_pos = max(max(data-mean_data, 0), [], 1);
+%     std_data = max(max(mean_data - data, 0), [], 1);
     
     my_legend = [my_legend, al_strategies.(fields{k})];
     
     if strcmp(fields{k}, 'batch_random_unfair') == 1
-        plot([11:90], data*100, line_spec{k}, 'linewidth', 3)
+        plot([11:90], mean_data*100, line_spec{k}, 'linewidth', 3)
     else
-        plot([11:90], data(11:end)*100, line_spec{k}, 'linewidth', 3)
+        plot([11:90], mean_data(11:end)*100, line_spec{k}, 'linewidth', 3)
+%         errorbar([11:90], mean_data(11:end)*100, std_data(11:end)*100, line_spec{k}, 'linewidth', 3)
     end
     
 end
@@ -47,7 +59,7 @@ legend(my_legend, 'location', 'southeast', 'fontsize', 22)
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([0, 90])
 ylim([20, 100])
-xlabel('Number of labeled samples')
+xlabel('Number of human labeled samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)

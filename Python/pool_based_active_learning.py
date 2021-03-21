@@ -31,10 +31,9 @@ n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
 # 30
-n_run = 1
-
+n_run = 10
 # optuna number of trails
-n_trial = 20
+n_trial = 2
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -45,6 +44,8 @@ n_fold = 5
 # do not change
 start_n_sample = 10
 end_n_sample = 90
+# end_n_sample - end_n_train for optuna
+
 
 # --- End of Configurations ---
 
@@ -110,8 +111,13 @@ def run_cv(train_set, target, num_class, n_sample_arr):
 
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
+        print("\t------Fold: {}/{} ------".format(fold_+1, n_fold))
+
         unqueried_index_set = set(train_idx)
+        # unqueried_index_set = set(train_idx[:end_n_train])
         queried_index_set = set()
+        # optuna_val_idx = train_idx
+
 
         # randomly select instances for initialization
         for _ in range(start_n_sample):
@@ -120,7 +126,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
             queried_index_set.add(sample_index)
 
         my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class,
-                                   train_idx=list(queried_index_set), val_idx=val_idx)
+                                   train_idx=list(queried_index_set), val_idx=list(queried_index_set))
 
         study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), sampler=optuna.samplers.RandomSampler(), direction="minimize")
         study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
@@ -128,6 +134,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
         oof[len(queried_index_set), val_idx, :] = model.predict(train_set.iloc[val_idx], num_iteration=model.best_iteration)
 
         while len(queried_index_set) < end_n_sample:
+        # while len(queried_index_set) < end_n_train:
 
             print("\t #sample: {}/{}".format(len(queried_index_set)+1, end_n_sample))
 
@@ -138,13 +145,13 @@ def run_cv(train_set, target, num_class, n_sample_arr):
                 queried_index_set.add(sample_index)
 
                 my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class,
-                                           train_idx=list(queried_index_set), val_idx=val_idx)
+                                           train_idx=list(queried_index_set), val_idx=list(queried_index_set))
                 # fair compare with incremental version
                 study = optuna.create_study(pruner=optuna.pruners.MedianPruner(),
                                             sampler=optuna.samplers.RandomSampler(), direction="minimize")
                 # n_trial_temp = (len(queried_index_set)-start_n_sample+1)*n_trial
-                # n_trial_temp = n_trial_temp if n_trial_temp <= 1000 else 1000
-                study.optimize(my_objective, n_trials=10*n_trial, callbacks=[my_objective.callback])
+                n_trial_temp = n_trial  # !!!!!!!!!!!!!!!!!!!
+                study.optimize(my_objective, n_trials=n_trial_temp, callbacks=[my_objective.callback])
                 model = my_objective.best_booster
                 oof[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx])
             else:
@@ -155,6 +162,8 @@ def run_cv(train_set, target, num_class, n_sample_arr):
                 unqueried_index_set.remove(sample_index)
                 queried_index_set.add(sample_index)
                 my_objective.train_idx = list(queried_index_set)
+                my_objective.val_idx = list(queried_index_set)
+
                 study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
                 model = my_objective.best_booster
                 oof[len(queried_index_set)-1, val_idx, :] = model.predict(train_set.iloc[val_idx])
@@ -180,8 +189,8 @@ print(result_pred)
 
 # do not want dot in filenames
 query_strategy = query_strategy.replace('.', '')
-print("Saving result to ./Result/{}_result.csv".format(query_strategy))
-savetxt("./Result/{}_result.csv".format(query_strategy), result_pred, delimiter=',')
+print("Saving result to ./Result/{}.csv".format(query_strategy))
+savetxt("./Result/{}.csv".format(query_strategy), result_pred, delimiter=',')
 
 
 

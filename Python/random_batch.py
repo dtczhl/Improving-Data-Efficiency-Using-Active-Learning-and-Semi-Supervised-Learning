@@ -21,7 +21,7 @@ n_train_sample_arr = [10, 90]
 n_run = 1
 
 # optuna number of trails
-n_trial = 20
+n_trial = 1
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -35,7 +35,7 @@ n_trial_factor = n_trial
 
 print("Batch Random\nn_train_sample_arr={}\nn_run={}\nn_trial={}".format(list(n_train_sample_arr), n_run, n_trial))
 
-np.random.seed(123)
+# np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 filesnames = os.listdir(dire)
@@ -82,10 +82,11 @@ def run_cv(train_set, target, num_class, n_sample):
 
         train_idx = train_idx[:n_sample]
 
+        n_trial = 1
         print("#fold: {}/{}, n_trail: {}, n_train_size: {}".format(fold_+1, n_fold, n_trial, len(train_idx)))
 
         my_objective = MyObjective(train_set=train_set, target=target, num_class=num_class, train_idx=train_idx,
-                                   val_idx=val_idx)
+                                   val_idx=train_idx)
 
         study = optuna.create_study(pruner=optuna.pruners.MedianPruner(), sampler=optuna.samplers.RandomSampler(), direction="minimize")
         study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])

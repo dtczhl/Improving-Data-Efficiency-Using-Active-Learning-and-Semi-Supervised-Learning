@@ -1,5 +1,11 @@
 # Data Description
 
+
+
+
+
+
+
 Run = 5
 
 * `Query By Disagreement`. `query_by_disagreement_*`
@@ -14,5 +20,5 @@ Folders
 * 1
     ```python
     n_run = 5
-    n_trial = 20
+    n_trial = 5
     ```

@@ -29,10 +29,10 @@ n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
 # 30
-n_run = 1
+n_run = 5
 
 # optuna number of trails
-n_trial = 20
+n_trial = 5
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -132,7 +132,7 @@ def run_cv(train_set, target, num_class, n_sample_arr):
 
             print("\t #sample: {}/{}".format(len(queried_index_set)+1, end_n_sample))
 
-            if base_method.lower() == "selfTrain":
+            if base_method.lower() == "selftrain":
                 sample_index = np.random.choice(tuple(unqueried_index_set))
                 unqueried_index_set.remove(sample_index)
                 queried_index_set.add(sample_index)

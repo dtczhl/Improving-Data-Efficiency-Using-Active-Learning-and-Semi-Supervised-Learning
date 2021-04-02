@@ -3,9 +3,12 @@ import lightgbm as lgb
 from scipy.stats import entropy
 from sklearn.metrics.pairwise import cosine_similarity
 
+import copy
 
+end_n_sample = 90
 
 def calculate_utility(prob, strategy):
+    # return [n_row, 1]
     if strategy == "confident":
         pred_confident = prob.max(axis=1)
         return pred_confident
@@ -21,7 +24,8 @@ def calculate_utility(prob, strategy):
         exit(-1)
 
 
-def query_index(model, train_set, queried_index_set, unqueried_index_set, query_strategy, target):
+def query_index(model, train_set, queried_index_set, unqueried_index_set, query_strategy, target,
+                val_idx=None, hyper_params=None):
 
     if query_strategy.lower() == "random":
         return np.random.choice(tuple(unqueried_index_set))
@@ -112,68 +116,95 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
             exit(-1)
 
     # Minimize Expected Error
-    # elif query_strategy.lower() == "minimize_expected_error":
-    #     unqueried_index_list = list(unqueried_index_set)
-    #
-    #     # model = objective.best_booster
-    #     prob = model.predict(train_set.iloc[unqueried_index_list])
-    #     expected_error_arr = np.zeros(len(unqueried_index_list))
-    #     i_index = 0
-    #     for k, v in zip(unqueried_index_list, prob):
-    #         objective_1, objective_2, objective_3, objective_4 \
-    #             = deepcopy(objective), deepcopy(objective), deepcopy(objective), deepcopy(objective)
-    #         target_1, target_2, target_3, target_4 \
-    #             = np.copy(target), np.copy(target), np.copy(target), np.copy(target)
-    #         target_1[k], target_2[k], target_3[k], target_4[k] = 0, 1, 2, 3
-    #         objective_1.target, objective_2.target, objective_3.target, objective_4.target \
-    #             = target_1, target_2, target_3, target_4
-    #
-    #         queried_index_set_temp = deepcopy(queried_index_set)
-    #         queried_index_set_temp.add(k)
-    #
-    #         objective_1.train_idx, objective_2.train_idx, objective_3.train_idx, objective_4.train_idx = \
-    #             list(queried_index_set_temp), list(queried_index_set_temp), \
-    #             list(queried_index_set_temp), list(queried_index_set_temp)
-    #
-    #         study_1 = optuna.create_study(pruner=optuna.pruners.MedianPruner(),
-    #                                       sampler=optuna.samplers.RandomSampler(), direction="minimize")
-    #         study_1.optimize(objective_1, n_trials=n_trial, callbacks=[objective_1.callback])
-    #         model_1 = objective_1.best_booster
-    #         prob_1 = model_1.predict(train_set.iloc[unqueried_index_list])
-    #         uncertainty_1 = 1 - prob_1.max(axis=1)
-    #         uncertainty_1 = np.sum(uncertainty_1)
-    #
-    #         study_2 = optuna.create_study(pruner=optuna.pruners.MedianPruner(),
-    #                                       sampler=optuna.samplers.RandomSampler(), direction="minimize")
-    #         study_2.optimize(objective_2, n_trials=n_trial, callbacks=[objective_2.callback])
-    #         model_2 = objective_2.best_booster
-    #         prob_2 = model_2.predict(train_set.iloc[unqueried_index_list])
-    #         uncertainty_2 = 1 - prob_2.max(axis=1)
-    #         uncertainty_2 = np.sum(uncertainty_2)
-    #
-    #         study_3 = optuna.create_study(pruner=optuna.pruners.MedianPruner(),
-    #                                       sampler=optuna.samplers.RandomSampler(), direction="minimize")
-    #         study_3.optimize(objective_3, n_trials=n_trial, callbacks=[objective_3.callback])
-    #         model_3 = objective_3.best_booster
-    #         prob_3 = model_3.predict(train_set.iloc[unqueried_index_list])
-    #         uncertainty_3 = 1 - prob_3.max(axis=1)
-    #         uncertainty_3 = np.sum(uncertainty_3)
-    #
-    #         study_4 = optuna.create_study(pruner=optuna.pruners.MedianPruner(),
-    #                                       sampler=optuna.samplers.RandomSampler(), direction="minimize")
-    #         study_4.optimize(objective_4, n_trials=n_trial, callbacks=[objective_4.callback])
-    #         model_4 = objective_4.best_booster
-    #         prob_4 = model_4.predict(train_set.iloc[unqueried_index_list])
-    #         uncertainty_4 = 1 - prob_4.max(axis=1)
-    #         uncertainty_4 = np.sum(uncertainty_4)
-    #
-    #         expected_error = v[0] * uncertainty_1 + v[1] * uncertainty_2 + v[2] * uncertainty_3 + v[3] * uncertainty_4
-    #         expected_error_arr[i_index] = expected_error
-    #         i_index = i_index + 1
-    #
-    #     sample_index = np.argmin(expected_error_arr)
-    #     sample_index = unqueried_index_list[sample_index]
-    #     return sample_index
+    elif query_strategy.lower().startswith("minimize"):
+        sub_fields = query_strategy.lower().split("_")
+        base_query_method = sub_fields[1]
+
+        unqueried_index_list = list(unqueried_index_set)
+        prob = model.predict(train_set.iloc[unqueried_index_list])
+        expected_error_arr = np.zeros(len(unqueried_index_list))
+
+        i_index = 0
+
+        for k, v in zip(unqueried_index_list, prob):
+
+            target_1, target_2, target_3, target_4 \
+                = np.copy(target), np.copy(target), np.copy(target), np.copy(target)
+            target_1[k], target_2[k], target_3[k], target_4[k] = 0, 1, 2, 3
+
+            queried_index_set_temp = copy.deepcopy(queried_index_set)
+            queried_index_set_temp.add(k)
+
+            # Last number,
+            if len(queried_index_set_temp) > len(hyper_params):
+                return unqueried_index_list[0]
+
+            train_data_1 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                       label=target_1[list(queried_index_set_temp)])
+            train_data_2 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                       label=target_2[list(queried_index_set_temp)])
+            train_data_3 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                       label=target_3[list(queried_index_set_temp)])
+            train_data_4 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                       label=target_4[list(queried_index_set_temp)])
+
+            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+            model_1 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_1, valid_sets=[valid_data],
+                                verbose_eval=False)
+            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+            model_2 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_2, valid_sets=[valid_data],
+                                verbose_eval=False)
+            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+            model_3 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_3, valid_sets=[valid_data],
+                                verbose_eval=False)
+            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+            model_4 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_4, valid_sets=[valid_data],
+                                verbose_eval=False)
+
+            prob_1 = model_1.predict(train_set.iloc[unqueried_index_list])
+            prob_2 = model_2.predict(train_set.iloc[unqueried_index_list])
+            prob_3 = model_3.predict(train_set.iloc[unqueried_index_list])
+            prob_4 = model_4.predict(train_set.iloc[unqueried_index_list])
+
+            if base_query_method == "leastconfident":
+
+                utility_1 = calculate_utility(prob_1, "confident")
+                error_1 = np.sum(1 - utility_1)
+
+                utility_2 = calculate_utility(prob_2, "confident")
+                error_2 = np.sum(1 - utility_2)
+
+                utility_3 = calculate_utility(prob_3, "confident")
+                error_3 = np.sum(1 - utility_3)
+
+                utility_4 = calculate_utility(prob_4, "confident")
+                error_4 = np.sum(1 - utility_4)
+
+            elif base_query_method == "entropy":
+
+                utility_1 = calculate_utility(prob_1, "entropy")
+                error_1 = np.sum(utility_1)
+
+                utility_2 = calculate_utility(prob_2, "entropy")
+                error_2 = np.sum(utility_2)
+
+                utility_3 = calculate_utility(prob_3, "entropy")
+                error_3 = np.sum(utility_3)
+
+                utility_4 = calculate_utility(prob_4, "entropy")
+                error_4 = np.sum(utility_4)
+
+            else:
+                print("Unknown base_query_method={}".format(base_query_method))
+                exit(-1)
+
+            expected_error = v[0] * error_1 + v[1] * error_2 + v[2] * error_3 + v[3] * error_4
+            expected_error_arr[i_index] = expected_error
+            i_index = i_index + 1
+
+        sample_index = np.argmin(expected_error_arr)
+        sample_index = unqueried_index_list[sample_index]
+        return sample_index
 
     else:
         print("Error: unknown strategy", query_strategy)

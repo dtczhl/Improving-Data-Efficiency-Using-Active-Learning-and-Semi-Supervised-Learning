@@ -21,7 +21,7 @@ from Query_Strategy import query_index
 # random
 # Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy
 # Information Density: density_[leastConfident|margin|entropy]_[cosine]_[x]
-# Minimizing Expected Error: minimize_expected_error
+# Minimizing Expected Error: minimize_leastConfident, minimize_entropy
 
 
 # take in as arguments
@@ -31,7 +31,6 @@ from Query_Strategy import query_index
 # n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
-# 30
 n_run = 10
 
 # data directory
@@ -54,16 +53,17 @@ optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 help_message = "Active Learning Sampling Method. " \
     "Supported Methods:\n" \
-    "random;\n" \
+    "Random: random;\n" \
     "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
-    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson|euclidean]_[x];"
+    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson|euclidean]_[x];\n" \
+    "Minimize Expected Error: minimize_leastConfident, minimize_entropy"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
 
 query_strategy = args.sampling_method
 
-print("query_strategy={}\nn_run={}\nstart_n_sample={}".format(query_strategy, n_run, start_n_sample))
+print("query_strategy={}\nn_run={}".format(query_strategy, n_run))
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))
@@ -134,7 +134,8 @@ def run_cv(train_set, target):
             sample_index = query_index(model=model, train_set=train_set,
                                        queried_index_set=queried_index_set,
                                        unqueried_index_set=unqueried_index_set,
-                                       query_strategy=query_strategy, target=target)
+                                       query_strategy=query_strategy, target=target,
+                                       val_idx=val_idx, hyper_params=hyper_params)
 
             unqueried_index_set.remove(sample_index)
             queried_index_set.add(sample_index)

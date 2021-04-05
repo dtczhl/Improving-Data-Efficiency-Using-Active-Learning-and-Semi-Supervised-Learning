@@ -36,7 +36,7 @@ for k = 1:numel(fields)
 end
 
 figure(1), clf, hold on
-set(gcf, 'position', [500, 500, 1000, 600])
+set(gcf, 'position', [500, 500, 1000, 650])
 
 x = 11:90;
 
@@ -51,12 +51,13 @@ h_legend.Position = [0.3, 0.09, 0.72, 0.3];
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([30, 90])
 ylim([20, 100])
-xlabel('Number of human labeled samples')
+xlabel('Number of human-annotated samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
+title('Information-density')
 
-axes('Position', [0.6, 0.48, 0.25, 0.25])
+axes('Position', [0.6, 0.45, 0.25, 0.25])
 box on, hold on
 
 for i_row = 1:size(all_data, 1)
@@ -66,7 +67,7 @@ for i_row = 1:size(all_data, 1)
 end
 set(gca, 'fontsize', 18)
 xticks([60:5:80])
-% ylim([80, 90])
+ylim([84, 90])
 yticks([84:2:90])
 
 hold off

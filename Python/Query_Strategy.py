@@ -205,7 +205,29 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
         sample_index = np.argmin(expected_error_arr)
         sample_index = unqueried_index_list[sample_index]
         return sample_index
+    elif query_strategy.lower().startswith("selftrain"):
+        sub_fields = query_strategy.lower().split("_")
+        base_query_method = sub_fields[1]
 
+        unqueried_index_list = list(unqueried_index_set)
+
+        prob = model.predict(train_set.iloc[unqueried_index_list])
+
+        if base_query_method == "random":
+            return np.random.choice(tuple(unqueried_index_set))
+        elif base_query_method == "confident":
+            utility = calculate_utility(prob, "confident")
+            sample_index_unordered = np.argmax(utility)
+            sample_index = unqueried_index_list[sample_index_unordered]
+            return sample_index
+        elif base_query_method == "entropy":
+            utility = calculate_utility(prob, "entropy")
+            sample_index_unordered = np.argmin(utility)
+            sample_index = unqueried_index_list[sample_index_unordered]
+            return sample_index
+        else:
+            print("Unknown base_query_method={}".format(base_query_method))
+            exit(-1)
     else:
         print("Error: unknown strategy", query_strategy)
         exit(-1)

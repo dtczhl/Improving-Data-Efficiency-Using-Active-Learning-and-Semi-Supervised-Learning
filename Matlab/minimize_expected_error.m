@@ -2,18 +2,14 @@
 
 clear, clc
 
-line_spec = {':', 'o-', '.-', '-.', '^-', 'x:', 's-.', 'd-', '^:', 'v-.'};
+line_spec = {':', 'o-', '.-', '-.', '^-'};
 
 % al = Active Learning
 
 al_strategies = struct( ...
     'random', 'Random', ...
-    'minimize_expected_error', 'Minimize Error', ...
-    'density_leastConfident_cosine_2', 'Least Confident, Cosine, \beta:2', ...
-    'density_leastConfident_euclidean_1', 'Least Confident, Euclidean, \beta:1', ...
-    'density_leastConfident_euclidean_2', 'Least Confident, Euclidean, \beta:2');
-
-
+    'minimize_leastConfident', 'Minimize Expected Prediction Error', ...
+    'minimize_entropy', 'Minimize Expected Log-loss Error');
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
 
@@ -21,33 +17,55 @@ data_file_suffix = '.csv';
 fields = fieldnames(al_strategies);
 
 my_legend = {};
+all_data = [];
 
-figure(1), clf, hold on
-set(gcf, 'position', [500, 500, 1000, 700])
+
 for k = 1:numel(fields)
     
     filename = fullfile(data_file_prefix, strcat(fields{k}, data_file_suffix));
     data = readmatrix(filename);
-    
-    
-    data = mean(data, 1);
-    
-    my_legend = [my_legend, al_strategies.(fields{k})];
-    
 
-    plot([11:90], data(11:end)*100, line_spec{k}, 'linewidth', 3)
-   
+    mean_data = mean(data);
     
+    all_data = [all_data; mean_data];
+    my_legend = [my_legend, al_strategies.(fields{k})];
+     
 end
 
-legend(my_legend, 'location', 'southeast', 'fontsize', 22, 'location', 'southeast')
+figure(1), clf, hold on
+set(gcf, 'position', [500, 500, 1000, 650])
+
+x = 11:90;
+
+for i_row = 1:size(all_data, 1)
+    data = all_data(i_row, 11:end);
+    plot(x, data *100, line_spec{i_row}, 'linewidth', 2)
+end
+
+h_legend = columnlegend(1, my_legend, 'location', 'northwest', 'fontsize', 22);
+h_legend.Position = [0.32, 0.18, 0.6, 0.2];
+
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([30, 90])
 ylim([20, 100])
-xlabel('Number of labeled samples')
+xlabel('Number of human-annotated samples')
 ylabel('Accuracy (%)')
-xticks(0:10:90)
-yticks(0:10:100)
-% yticks(20:10:100)
+xticks(10:10:90)
+yticks(20:10:100)
+title('Minimize Expected Error')
+
+axes('Position', [0.6, 0.45, 0.25, 0.25])
+box on, hold on
+
+for i_row = 1:size(all_data, 1)
+    data = all_data(i_row, 11:end);
+    indexOfInterest = (x >= 60) & (x <= 80);
+    plot(x(indexOfInterest), 100 * data(indexOfInterest), line_spec{i_row}, 'linewidth', 2)
+end
+set(gca, 'fontsize', 18)
+xticks([60:5:80])
+ylim([84, 90])
+yticks([84:2:90])
+
 hold off
-saveas(gcf, './Image/density.png')
+saveas(gcf, './Image/minimize_error.png')

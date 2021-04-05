@@ -34,7 +34,7 @@ for k = 1:numel(fields)
 end
 
 figure(1), clf, hold on
-set(gcf, 'position', [500, 500, 1000, 600])
+set(gcf, 'position', [500, 500, 1000, 650])
 
 x = 11:90;
 
@@ -44,17 +44,18 @@ for i_row = 1:size(all_data, 1)
 end
 
 h_legend = columnlegend(2, my_legend, 'location', 'northwest', 'fontsize', 22);
-h_legend.Position = [0.42, 0.15, 0.6, 0.2];
+h_legend.Position = [0.42, 0.14, 0.6, 0.2];
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([30, 90])
 ylim([20, 100])
-xlabel('Number of human labeled samples')
+xlabel('Number of human-annotated samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
+title('Uncertainty Sampling')
 
-axes('Position', [0.6, 0.48, 0.25, 0.25])
+axes('Position', [0.6, 0.45, 0.25, 0.25])
 box on, hold on
 
 for i_row = 1:size(all_data, 1)
@@ -64,7 +65,7 @@ for i_row = 1:size(all_data, 1)
 end
 set(gca, 'fontsize', 18)
 xticks([60:5:80])
-% ylim([80, 90])
+ylim([84, 90])
 yticks([84:2:90])
 
 hold off

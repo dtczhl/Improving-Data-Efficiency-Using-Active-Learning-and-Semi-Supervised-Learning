@@ -1,55 +1,75 @@
-% Self Train
+% compare
 
 clear, clc
 
-line_spec = {'.-', 'o-', ':', '-.'};
+line_spec = {':', 'o-', '.-', '-.', '^-'};
 
 % al = Active Learning
 
 al_strategies = struct( ...
-    'batch_random_unfair', 'Baseline', ...
-    'selfTrain_leastConfident_temp', 'Self Train: Least Confident', ...
-    'selfTrain_entropy_temp', 'Self Train: Entropy');
+    'random', 'Baseline', ...
+    'selfTrain_random', 'Random', ...
+    'selfTrain_confident', 'Maximum Confident', ...
+    'selfTrain_entropy', 'Mininum Entropy');
 
-data_file_prefix = '../Save/1/';
-data_file_suffix = '_result.csv';
+data_file_prefix = '../Python/Result/';
+data_file_suffix = '.csv';
 
 
 fields = fieldnames(al_strategies);
 
 my_legend = {};
+all_data = [];
 
-figure(1), clf, hold on
-set(gcf, 'position', [500, 500, 1000, 700])
+
 for k = 1:numel(fields)
     
     filename = fullfile(data_file_prefix, strcat(fields{k}, data_file_suffix));
     data = readmatrix(filename);
+
+    mean_data = mean(data);
     
-    if strcmp(fields{k}, 'batch_random_unfair') == 1
-        data = data';
-        data = mean(data);
-    end
-    
-%     data = mean(data);
-    
+    all_data = [all_data; mean_data];
     my_legend = [my_legend, al_strategies.(fields{k})];
-    
-    if strcmp(fields{k}, 'batch_random_unfair') == 1
-        plot([11:90], data*100, line_spec{k}, 'linewidth', 3)
-    else
-        plot([11:90], data(11:end)*100, line_spec{k}, 'linewidth', 3)
-    end
-    
+     
 end
 
-legend(my_legend, 'location', 'southeast', 'fontsize', 22)
+figure(1), clf, hold on
+set(gcf, 'position', [500, 500, 1000, 650])
+
+x = 11:90;
+
+for i_row = 1:size(all_data, 1)
+    data = all_data(i_row, 11:end);
+    plot(x, data *100, line_spec{i_row}, 'linewidth', 3)
+end
+
+legend(my_legend, 'location', 'southeast', 'fontsize', 24)
+
+% h_legend = columnlegend(1, my_legend, 'location', 'northwest', 'fontsize', 22);
+% h_legend.Position = [0.3, 0.18, 0.6, 0.2];
+
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
-xlim([0, 90])
-ylim([20, 100])
-xlabel('Number of labeled samples')
+xlim([30, 90])
+ylim([20, 90])
+xlabel('Number of human-annotated samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
+title('Self Training')
+% 
+% axes('Position', [0.6, 0.45, 0.25, 0.25])
+% box on, hold on
+% 
+% for i_row = 1:size(all_data, 1)
+%     data = all_data(i_row, 11:end);
+%     indexOfInterest = (x >= 60) & (x <= 80);
+%     plot(x(indexOfInterest), 100 * data(indexOfInterest), line_spec{i_row}, 'linewidth', 2)
+% end
+% set(gca, 'fontsize', 18)
+% xticks([60:5:80])
+% ylim([84, 90])
+% yticks([84:2:90])
+
 hold off
 saveas(gcf, './Image/self_train.png')

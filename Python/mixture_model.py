@@ -21,20 +21,14 @@ from Query_Strategy import query_index
 
 # ------ Configurations ------
 
-# self_train
+# mixture model
 
 
 # take in as arguments
 # query_strategy = "random"
 
-# do not change
-# n_sample_arr = list(range(3, 91))
-
 # number of runs for each reduced number of samples
-n_run = 10
-
-# optuna number of trails
-# n_trial = 5
+n_run = 1
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -55,7 +49,7 @@ optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 help_message = "Self Training. " \
     "Supported Methods:\n" \
-    "Self Training: [random|confident|entropy]"
+    "Mixture Model: full"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
@@ -132,6 +126,7 @@ def run_cv(train_set, target):
             unqueried_index_set_copy = deepcopy(unqueried_index_set)
             target_copy = deepcopy(target)
 
+            # remove this part
             while len(unqueried_index_set_copy) > 0 and len(queried_index_set_copy) <= end_n_sample:
 
                 train_data = lgb.Dataset(train_set.iloc[list(queried_index_set_copy)], label=target_copy[list(queried_index_set_copy)])

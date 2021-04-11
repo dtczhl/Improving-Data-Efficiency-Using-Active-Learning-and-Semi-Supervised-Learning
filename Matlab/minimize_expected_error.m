@@ -7,9 +7,10 @@ line_spec = {':', 'o-', '.-', '-.', '^-'};
 % al = Active Learning
 
 al_strategies = struct( ...
-    'random', 'Random', ...
-    'minimize_leastConfident', 'Minimize Expected Prediction Error', ...
-    'minimize_entropy', 'Minimize Expected Log-loss Error');
+    'random', 'Baseline', ...
+    'minimize_leastConfident', 'Minimizing Expected Prediction Error', ...
+    'minimize_entropy', 'Minimizing Expected Log-loss Error');
+
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
 
@@ -25,7 +26,8 @@ for k = 1:numel(fields)
     filename = fullfile(data_file_prefix, strcat(fields{k}, data_file_suffix));
     data = readmatrix(filename);
 
-    mean_data = mean(data);
+    mean_data = mean(data)
+    
     
     all_data = [all_data; mean_data];
     my_legend = [my_legend, al_strategies.(fields{k})];
@@ -43,7 +45,7 @@ for i_row = 1:size(all_data, 1)
 end
 
 h_legend = columnlegend(1, my_legend, 'location', 'northwest', 'fontsize', 22);
-h_legend.Position = [0.32, 0.18, 0.6, 0.2];
+h_legend.Position = [0.3, 0.18, 0.6, 0.2];
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([30, 90])

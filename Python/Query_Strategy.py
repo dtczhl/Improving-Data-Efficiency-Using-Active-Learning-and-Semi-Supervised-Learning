@@ -206,6 +206,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
         sample_index = unqueried_index_list[sample_index]
         return sample_index
     elif query_strategy.lower().startswith("selftrain"):
+        # self training
         sub_fields = query_strategy.lower().split("_")
         base_query_method = sub_fields[1]
 

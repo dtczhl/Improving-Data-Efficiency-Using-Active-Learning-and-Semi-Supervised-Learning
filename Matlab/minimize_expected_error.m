@@ -26,7 +26,7 @@ for k = 1:numel(fields)
     filename = fullfile(data_file_prefix, strcat(fields{k}, data_file_suffix));
     data = readmatrix(filename);
 
-    mean_data = mean(data)
+    mean_data = mean(data);
     
     
     all_data = [all_data; mean_data];

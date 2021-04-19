@@ -18,6 +18,8 @@ from copy import deepcopy
 from MyObjective import MyObjective
 from Query_Strategy import query_index
 
+from MyGMM import MyGMM
+
 
 # ------ Configurations ------
 
@@ -28,7 +30,13 @@ from Query_Strategy import query_index
 # query_strategy = "random"
 
 # number of runs for each reduced number of samples
-n_run = 1
+n_run = 10
+
+# weight of unlabeled samples vs labeled samples
+# weight = 0.5
+
+# max number of iteration for EM
+max_iter = 10
 
 # data directory
 dire = "../data/PAW FTIR data/"
@@ -49,15 +57,19 @@ optuna.logging.set_verbosity(optuna.logging.FATAL)
 
 help_message = "Self Training. " \
     "Supported Methods:\n" \
-    "Mixture Model: full"
+    "Mixture Model: full_[lambda]"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
 
 query_strategy = args.sampling_method
+query_strategy_literal = query_strategy
 
+query_strategy_split = query_strategy.split("_")
+query_strategy = query_strategy_split[0]
+weight = float(query_strategy_split[1])
 
-print("query_strategy={}\nn_run={}".format(query_strategy, n_run))
+print("query_strategy={}\nweight={}\nn_run={}".format(query_strategy, weight, n_run))
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))
@@ -121,33 +133,19 @@ def run_cv(train_set, target):
 
             print("\t #fold: {}/{}, #sample: {}/{}".format(fold_+1, n_fold, len(queried_index_set), end_n_sample))
 
-            # incrementally select data instances
-            queried_index_set_copy = deepcopy(queried_index_set)
-            unqueried_index_set_copy = deepcopy(unqueried_index_set)
             target_copy = deepcopy(target)
+            target_copy[list(unqueried_index_set)] = -1
 
-            # remove this part
-            while len(unqueried_index_set_copy) > 0 and len(queried_index_set_copy) <= end_n_sample:
+            gmm_model = MyGMM(n_component=num_class, covariance=query_strategy, weight=weight, max_iter=max_iter)
+            gmm_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
+            pred_label = gmm_model.predict(train_set)
 
-                train_data = lgb.Dataset(train_set.iloc[list(queried_index_set_copy)], label=target_copy[list(queried_index_set_copy)])
-                valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target_copy[val_idx])
-
-                model = lgb.train(hyper_params[len(queried_index_set_copy)], train_data, valid_sets=[valid_data], verbose_eval=False)
-
-                sample_index = query_index(model=model, train_set=train_set,
-                                           queried_index_set=queried_index_set_copy,
-                                           unqueried_index_set=unqueried_index_set_copy,
-                                           query_strategy="selfTrain"+query_strategy, target=target_copy,
-                                           val_idx=val_idx, hyper_params=hyper_params)
-
-                target_copy[sample_index] = np.argmax(np.squeeze(model.predict(train_set.iloc[sample_index])))
-                unqueried_index_set_copy.remove(sample_index)
-                queried_index_set_copy.add(sample_index)
+            pred_label[val_idx] = target[val_idx]
+            pred_label[list(queried_index_set)] = target[list(queried_index_set)]
 
             # model evaluation
-            train_data = lgb.Dataset(train_set.iloc[list(queried_index_set_copy)],
-                                     label=target_copy[list(queried_index_set_copy)])
-            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target_copy[val_idx])
+            train_data = lgb.Dataset(train_set.iloc[train_idx], label=pred_label[train_idx])
+            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=pred_label[val_idx])
 
             model = lgb.train(hyper_params[end_n_sample], train_data, valid_sets=[valid_data], verbose_eval=False)
 
@@ -175,9 +173,9 @@ for i_run in range(n_run):
 print(result_pred)
 
 # do not want dot in filenames
-query_strategy = query_strategy.replace('.', '')
-print("Saving result to ./Result/{}.csv".format(query_strategy))
-savetxt("./Result/{}.csv".format(query_strategy), result_pred, delimiter=',')
+query_strategy = query_strategy_literal.replace('.', '')
+print("Saving result to ./Result/mixture_{}.csv".format(query_strategy))
+savetxt("./Result/mixture_{}.csv".format(query_strategy), result_pred, delimiter=',')
 
 
 

@@ -8,8 +8,9 @@ line_spec = {':', 'o-', '.-', '-.', '^-'};
 
 al_strategies = struct( ...
     'random', 'Baseline', ...
-    'labelSpread_rbf', 'Kernel = rbf', ...
-    'labelSpread_knn', 'Kernel = knn');
+    'labelSpread_rbf', 'Kernel = RBF', ...
+    'labelSpread_knn', 'Kernel = KNN');
+
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
@@ -40,35 +41,33 @@ x = 11:90;
 
 for i_row = 1:size(all_data, 1)
     data = all_data(i_row, 11:end);
-    plot(x, data *100, line_spec{i_row}, 'linewidth', 3)
+    plot(x, data *100, line_spec{i_row}, 'linewidth', 2)
 end
 
-legend(my_legend, 'location', 'southeast', 'fontsize', 24)
-
-% h_legend = columnlegend(1, my_legend, 'location', 'northwest', 'fontsize', 22);
-% h_legend.Position = [0.3, 0.18, 0.6, 0.2];
+h_legend = columnlegend(2, my_legend, 'location', 'northwest', 'fontsize', 22);
+h_legend.Position = [0.38, 0.13, 0.5, 0.2];
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([30, 90])
-ylim([20, 90])
+ylim([20, 100])
 xlabel('Number of human-annotated samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
 title('Label Spreading')
-% 
-% axes('Position', [0.6, 0.45, 0.25, 0.25])
-% box on, hold on
-% 
-% for i_row = 1:size(all_data, 1)
-%     data = all_data(i_row, 11:end);
-%     indexOfInterest = (x >= 60) & (x <= 80);
-%     plot(x(indexOfInterest), 100 * data(indexOfInterest), line_spec{i_row}, 'linewidth', 2)
-% end
-% set(gca, 'fontsize', 18)
-% xticks([60:5:80])
-% ylim([84, 90])
-% yticks([84:2:90])
+
+axes('Position', [0.6, 0.45, 0.25, 0.25])
+box on, hold on
+
+for i_row = 1:size(all_data, 1)
+    data = all_data(i_row, 11:end);
+    indexOfInterest = (x >= 60) & (x <= 80);
+    plot(x(indexOfInterest), 100 * data(indexOfInterest), line_spec{i_row}, 'linewidth', 2)
+end
+set(gca, 'fontsize', 18)
+xticks([60:5:80])
+ylim([82, 88])
+yticks([82:2:88])
 
 hold off
 saveas(gcf, './Image/label_spread.png')

@@ -2,12 +2,8 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="bbfbb0cd-b47d-4492-bc1e-ed1e17b27b6e" name="pmserver_huanlezhang">
-        <fileTransfer rootFolder="/home/huanlezhang" accessType="SFTP" host="169.237.7.61" port="22" sshConfigId="986efdab-6a47-4ea9-b5bc-c9d38b60c020" sshConfig="huanlezhang@169.237.7.61:22 password">
-          <advancedOptions>
-            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
-          </advancedOptions>
-        </fileTransfer>
+      <webServer id="aa8c6d00-6a60-4d58-84a2-5f7f6ec6c37e" name="Plasma">
+        <fileTransfer rootFolder="/home/huanlezhang" accessType="SFTP" host="169.237.7.61" port="22" sshConfigId="986efdab-6a47-4ea9-b5bc-c9d38b60c020" sshConfig="huanlezhang@169.237.7.61:22 password" />
       </webServer>
     </option>
   </component>

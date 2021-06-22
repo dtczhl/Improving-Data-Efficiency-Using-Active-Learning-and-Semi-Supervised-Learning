@@ -8,7 +8,8 @@ line_spec = {':', 'o-', '.-', '-.', '^-'};
 
 al_strategies = struct( ...
     'random', 'Baseline', ...
-    'mixture_full_1.0', '\lambda = 0');
+    'mixture_full_0', '\lambda = 0', ...
+    'mixture_full_1', '\lambda = 0');
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';

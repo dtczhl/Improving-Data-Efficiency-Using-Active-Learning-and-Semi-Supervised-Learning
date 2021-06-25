@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="Plasma" remoteFilesAllowedToDisappearOnAutoupload="false" autoUploadExternalChanges="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="Plasma_pmserver_back" remoteFilesAllowedToDisappearOnAutoupload="false" autoUploadExternalChanges="true">
     <serverData>
-      <paths name="Plasma">
+      <paths name="Plasma_pmserver_back">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/huanlezhang/Plasma" local="$PROJECT_DIR$" />
+            <mapping deploy="/Plasma" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

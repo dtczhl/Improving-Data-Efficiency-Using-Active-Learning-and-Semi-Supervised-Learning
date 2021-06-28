@@ -1,0 +1,14 @@
+Model,sp-sep,se-sep
+Nearest (1) Neighbors,0.70,0.60
+Nearest (2) Neighbors,0.72,0.52
+Nearest (3) Neighbors,0.73,0.58
+SVC Kernel=linear,0.88,0.75
+SVC Kernel=poly,0.69,0.59
+SVC Kernel=rbf,0.71,0.67
+SVC Kernel=sigmoid,0.75,0.67
+Gaussian Process,0.69,0.60
+Decision Tree,0.64,0.58
+Random Forest,0.72,0.65
+MLPClassifier 100-100,0.85,0.66
+AdaBoost,0.71,0.62
+Naive Bayes,0.74,0.69

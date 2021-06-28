@@ -1,11 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="Plasma_pmserver_back" remoteFilesAllowedToDisappearOnAutoupload="false" autoUploadExternalChanges="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="dtczhl@barbel.cs.ucdavis.edu:2222 password" remoteFilesAllowedToDisappearOnAutoupload="false" autoUploadExternalChanges="true">
     <serverData>
+      <paths name="Plasma">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/Plasma" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="Plasma_pmserver_back">
         <serverdata>
           <mappings>
             <mapping deploy="/Plasma" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dtczhl@barbel.cs.ucdavis.edu:2222 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/dtczhl/Plasma" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

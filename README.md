@@ -1,33 +1,51 @@
-# Plasma Project
+# Data Efficiency Project
 
 Collaboration work with Prof. Nitin Nitin.
 
-
-## Background
-
-Given spectrum data (an array of length 1868), predict the plasma dosage (4 classes).
-
-We use `LightGBM` model
-
-We adopt 5-fold cross-validation
-
 ## Goal
 
-Reducing the number of *labeled* samples, while keeping accuracy of the AI model
+Reducing the number of **human-labeled** samples, while keeping accuracy of the AI model, using active learning and semi-supervised learning.
 
-## Method
+## Dataset
 
-We use active learning and semi-supervised learning
+1.  Plasma. Given spectrum data (an array of 1868 numbers), predict the plasma dosage (4 classes).
 
-### Active Learning
+2.  EEM. Given spectrum data (an array of XXX numbers), predict the type of solution (2 classes).
 
-#### Uncertainty based
+## ML Model
+
+1.  Plasma. LightGBM.
+
+2.  EEM. LinearSVM
+
+## Experimental Setup
+
+*   Optuna is used to determine the hyper-parameters for each size of samples
+
+*   Initial model is trained using 20 random samples
+
+*   5-fold cross-validation
+
+## Steps
+
+### Plasma
+
+1.  Use optuna to get hyper-parameters. `Python/Hyper_Parameter/hyper_parameter_init.py`. Results are saved to `Python/Hyper_Parameter/params.pkl` [Error]
+
+2.  Run active learning algorithms. See Section Active Learning below.
+
+### EEM
+
+
+## Active Learning
+
+### Uncertainty based
 
 - Least Confident
 - Margin
 - Entropy
 
-#### Information Density
+### Information Density
 
 
 - Informativenss: [Least Confident | Margin | Entropy]
@@ -37,9 +55,9 @@ We use active learning and semi-supervised learning
 
 
 
-#### Minimizing Expected Error
+### Minimizing Expected Error
 
-### Semi-supervised Learning
+## Semi-supervised Learning
 
 
-### Combine Active Learning and Semi-supervised Learning
+## Combine Active Learning and Semi-supervised Learning

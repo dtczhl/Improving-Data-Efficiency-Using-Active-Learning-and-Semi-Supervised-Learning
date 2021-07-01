@@ -12,7 +12,7 @@ import os
 
 import pickle
 
-from Python.Hyper_Parameter.Hyper_Parameter_Init import MyObjective_InitParam
+from Python.Hyper_Parameter.Hyper_Parameter_Init_eem import MyObjective_InitParam
 
 # optuna number of trails
 n_trial = 30
@@ -22,7 +22,7 @@ n_trial = 30
 n_fold = 5
 
 # do not change
-start_n_sample = 10
+start_n_sample = 15
 end_n_sample = 56
 # end_n_sample - end_n_train for optuna
 
@@ -51,8 +51,8 @@ sep_df = sep_df.transpose()
 
 # add label
 sp_df["Label"] = 0
-se_df["Label"] = 1
-sep_df["Label"] = 2
+se_df["Label"] = 0
+sep_df["Label"] = 1
 
 eem_new_df = pd.concat([sp_df, se_df, sep_df], ignore_index=True)
 
@@ -70,7 +70,7 @@ data = stand.fit_transform(train_set)
 le = preprocessing.LabelEncoder()
 target = le.fit_transform(target)
 
-num_class = len(set(target))
+# num_class = len(set(target))
 
 train_idx = np.arange(len(train_set))
 
@@ -78,10 +78,10 @@ for i_size in range(start_n_sample, end_n_sample+1):
 
     print("#samples: {}/{}".format(i_size, end_n_sample))
 
-    my_objective = MyObjective_InitParam(train_set=train_set, target=target, num_class=num_class, n_fold=n_fold,
+    my_objective = MyObjective_InitParam(train_set=train_set, target=target, num_class=2, n_fold=n_fold,
                                          n_data=i_size)
 
-    study = optuna.create_study(direction="minimize")
+    study = optuna.create_study(direction="maximize")
     study.optimize(my_objective, n_trials=n_trial, callbacks=[my_objective.callback])
 
     result_hyper[i_size] = my_objective.best_param

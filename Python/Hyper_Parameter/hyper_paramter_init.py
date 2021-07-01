@@ -1,5 +1,5 @@
 """
-    Create Initial Hyper-parameters for each data size
+    Create Initial Hyper-parameters for Plasma/LightGBM in different data sizes
 
     Results saved to ./Hyper_Parameter/params.pkl
 """
@@ -8,25 +8,29 @@ import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 import optuna
-import os
-
 import pickle
 
 from Python.Hyper_Parameter.Hyper_Parameter_Init import MyObjective_InitParam
+
+import os
+
+# change working directory to the current file
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 # optuna number of trails
 n_trial = 30
 
 # data directory
-dire = "../data/PAW FTIR data/"
+dire = "../../data/PAW FTIR data/"
 
 # number of folds for cross-validation. !Do not change
 n_fold = 5
 
 # do not change
-start_n_sample = 10
+start_n_sample = 20
 end_n_sample = 90
-# end_n_sample - end_n_train for optuna
 
 
 # --- End of Configurations ---
@@ -66,6 +70,9 @@ target = df["group"]
 
 stand = preprocessing.StandardScaler()
 data = stand.fit_transform(train_set)
+data = pd.DataFrame(data)
+data.columns = train_set.columns
+train_set = data
 
 le = preprocessing.LabelEncoder()
 target = le.fit_transform(target)

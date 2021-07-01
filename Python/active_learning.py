@@ -1,3 +1,7 @@
+"""
+    Active Learning for Plasma
+"""
+
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
@@ -40,7 +44,7 @@ dire = "../data/PAW FTIR data/"
 n_fold = 5
 
 # do not change
-start_n_sample = 10
+start_n_sample = 20
 end_n_sample = 90
 # end_n_sample - end_n_train for optuna
 
@@ -92,6 +96,9 @@ target = df["group"]
 
 stand = preprocessing.StandardScaler()
 data = stand.fit_transform(train_set)
+data = pd.DataFrame(data)
+data.columns = train_set.columns
+train_set = data
 
 le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)

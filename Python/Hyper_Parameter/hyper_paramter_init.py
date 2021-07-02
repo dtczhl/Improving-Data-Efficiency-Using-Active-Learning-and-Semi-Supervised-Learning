@@ -29,7 +29,7 @@ dire = "../../data/PAW FTIR data/"
 n_fold = 5
 
 # do not change
-start_n_sample = 20
+start_n_sample = 30
 end_n_sample = 90
 
 
@@ -95,7 +95,7 @@ for i_size in range(start_n_sample, end_n_sample+1):
 
     print("------ ", i_size, my_objective.best_accuracy)
 
-with open("./Hyper_Parameter/params.pkl", "wb") as f:
+with open("./params.pkl", "wb") as f:
     pickle.dump(result_hyper, f)
 
 

@@ -47,29 +47,22 @@ class MyObjective_InitParam(object):
         }
 
         train_idx = np.arange(len(self.train_set))
+        train_idx = np.random.permutation(train_idx)
 
-        train_idx_set = set(train_idx)
-
-        train_idx_run = np.random.choice(train_idx, self.n_data)
-
-        train_set_run = self.train_set.iloc[train_idx_run]
+        train_set_run = self.train_set.iloc[train_idx]
         train_set_run.reset_index(drop=True, inplace=True)
 
-        target_run = self.target[train_idx_run]
+        target_run = self.target[train_idx]
 
         folds = KFold(n_splits=self.n_fold, shuffle=True)
         pred = np.zeros([len(train_set_run), self.num_class])
 
         for fold_, (train_idx_, val_idx_) in enumerate(folds.split(train_set_run.values, target_run)):
 
-            train_idx_fold_set = set(train_idx_)
-            valid_idx_fold_set = train_idx_set.difference(train_idx_fold_set)
-            valid_idx = list(valid_idx_fold_set)
+            train_idx_ = train_idx_[:self.n_data]
 
             train_data = lgb.Dataset(train_set_run.iloc[train_idx_], label=target_run[train_idx_])
-
-            # use all the remaining for validation
-            val_data = lgb.Dataset(train_set_run.iloc[valid_idx], label=target_run[valid_idx])
+            val_data = lgb.Dataset(train_set_run.iloc[val_idx_], label=target_run[val_idx_])
 
             pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "multi_logloss")
             gbm = lgb.train(self.param, train_data, valid_sets=[val_data], verbose_eval=False, callbacks=[pruning_callback])

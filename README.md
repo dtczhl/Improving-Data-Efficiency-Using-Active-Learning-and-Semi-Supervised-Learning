@@ -22,7 +22,7 @@ Reducing the number of **human-labeled** samples, while keeping accuracy of the 
 
 *   Optuna is used to determine the hyper-parameters for each size of samples
 
-*   Initial model is trained using 20 random samples
+*   Initial model is trained using 30 random samples
 
 *   5-fold cross-validation
 
@@ -30,29 +30,31 @@ Reducing the number of **human-labeled** samples, while keeping accuracy of the 
 
 ### Plasma
 
-1.  Use optuna to get hyper-parameters. `Python/Hyper_Parameter/hyper_parameter_init.py`. Results are saved to `Python/Hyper_Parameter/params.pkl` [Error]
+1.  Use optuna to get hyper-parameters for data size from [30, 90]. Each size's hyper-parameter is obtained by 30 trials. Run `Python/Hyper_Parameter/hyper_parameter_init.py`. Results are saved to `Python/Hyper_Parameter/params.pkl`
 
 2.  Run active learning algorithms. See Section Active Learning below.
 
 ### EEM
 
+## Random Sampling
+
+We use random sampling as the baseline.
+
+1.  Plasma. Run `Python/active_learning.py random`. Reults are saved to `Result/random.csv`
+
+2. EEM.
 
 ## Active Learning
 
-### Uncertainty based
+### Least Confident
 
-- Least Confident
-- Margin
-- Entropy
+1.  Plasma. Run `Python/active_learning.py uncertainty_leastConfident`. Results are saved to `Result/uncertainty_leastConfident.csv`.
 
-### Information Density
+2.  EEM.
 
+### Entropy
 
-- Informativenss: [Least Confident | Margin | Entropy]
-- Representativeness: [Cosine Similarity | Euclidean Distance | Pearson Similarity]
-- Importance Ratio <img src="https://bit.ly/2SA9n8Y" align="center" border="0" alt="\beta" width="17" height="19" />:   [0.5, 1, 2]
-
-
+1.  Plasma. Run `Python/active_learning.py uncertainty_entropy`. Results are saved to `Result/uncertainty_entropy.csv`.
 
 
 ### Minimizing Expected Error
@@ -61,3 +63,7 @@ Reducing the number of **human-labeled** samples, while keeping accuracy of the 
 
 
 ## Combine Active Learning and Semi-supervised Learning
+
+## Result Analysis and Visualization
+
+Under `Matlab` directory.

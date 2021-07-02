@@ -44,7 +44,7 @@ dire = "../data/PAW FTIR data/"
 n_fold = 5
 
 # do not change
-start_n_sample = 20
+start_n_sample = 40
 end_n_sample = 90
 # end_n_sample - end_n_train for optuna
 
@@ -148,7 +148,7 @@ def run_cv(train_set, target):
             queried_index_set.add(sample_index)
 
     for i_pred in range(len(preds)):
-        if i_pred < start_n_sample:
+        if i_pred < start_n_sample - 1:
             continue
         pred_label = np.argmax(preds[i_pred], axis=1)
         accuracy = np.sum(pred_label == target) / len(target)

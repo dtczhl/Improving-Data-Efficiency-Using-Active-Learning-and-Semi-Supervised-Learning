@@ -8,9 +8,9 @@ Reducing the number of **human-labeled** samples, while keeping accuracy of the 
 
 ## Dataset
 
-1.  Plasma. Given spectrum data (an array of 1868 numbers), predict the plasma dosage (4 classes).
+1.  Plasma. Given spectrum data (an array of 1868 numbers), predict the plasma dosage (4 classes). Dosage distribution: 27, 27, 30, 30.
 
-2.  EEM. Given spectrum data (an array of XXX numbers), predict the type of solution (2 classes).
+2.  EEM. Given spectrum data (an array of 744 numbers), predict the type of solution (2 classes). SP, SE, SEP each has 24 samples. 
 
 ## ML Model
 
@@ -57,7 +57,11 @@ We use random sampling as the baseline.
 1.  Plasma. Run `Python/active_learning.py uncertainty_entropy`. Results are saved to `Result/uncertainty_entropy.csv`.
 
 
-### Minimizing Expected Error
+### Minimizing Expected Prediction Error
+
+1.  Plasma. Run `Python/active_learning.py minimize_leastConfident`. Results are saved to `Result/minimize_leastConfident.csv`.
+
+### Minimizing Expected Log-loss Error
 
 ## Semi-supervised Learning
 

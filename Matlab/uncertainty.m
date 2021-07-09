@@ -55,8 +55,8 @@ hleg = legend(aline, my_legend, 'location', 'southeast');
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([40, 90])
-ylim([60, 95])
-xlabel('Number of human-annotated samples')
+ylim([60, 100])
+xlabel('Number of labeled samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)

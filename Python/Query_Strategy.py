@@ -205,6 +205,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
         sample_index = np.argmin(expected_error_arr)
         sample_index = unqueried_index_list[sample_index]
         return sample_index
+
     elif query_strategy.lower().startswith("selftrain"):
         # self training
         sub_fields = query_strategy.lower().split("_")

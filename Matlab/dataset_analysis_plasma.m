@@ -37,10 +37,10 @@ X = X';
 count = count';
 
 figure(1)
-set(gcf, 'position', [500, 500, 1000, 650])
+set(gcf, 'position', [500, 500, 800, 500])
 barh(count, 0.5)
 set(gca, 'xgrid', 'on', 'fontsize', 30)
-xlabel('Count')
+xlabel('Number of samples')
 ylabel('Plasma Dosage')
 saveas(gcf, 'Image/plasma_count.png')
 
@@ -53,7 +53,7 @@ for i = 1:numel(X)
 end
 legend({'A sample of dosage 1', 'A sample of dosage 2', 'A sample of dosage 3', 'A sample of dosage 4'}, 'location', 'northeast')
 set(gca, 'fontsize', 30, 'yscale', 'linear')
-xlabel('Frequency')
+xlabel('Frequency (Hz)')
 ylabel('Intensity')
 grid on
 hold off

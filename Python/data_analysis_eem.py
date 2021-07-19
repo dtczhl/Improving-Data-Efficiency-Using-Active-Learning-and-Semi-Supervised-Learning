@@ -7,6 +7,7 @@
 import os
 
 import pandas as pd
+import numpy as np
 
 
 # path to the data file
@@ -17,8 +18,14 @@ sp_df = eem_df.filter(regex='SP[0-9]+')
 se_df = eem_df.filter(regex='SE[0-9]+')
 sep_df = eem_df.filter(regex='SEP[0-9]+')
 
-feature_names = eem_df["Em"].values.tolist()
-feature_names.append("Label")
+feature_ex = eem_df["EX"].values.tolist()
+feature_em = eem_df["Em"].values.tolist()
+
+for i in range(len(feature_ex)):
+    feature_ex[i] = feature_ex[i] * 1000 + feature_em[i]
+
+np.savetxt("../data/Processed/eem_ex_em.csv", feature_ex, delimiter=",")
+
 
 # transpose
 sp_df = sp_df.transpose()
@@ -31,8 +38,6 @@ se_df["Label"] = 1
 sep_df["Label"] = 2
 
 df = pd.concat([sp_df, se_df, sep_df], ignore_index=True)
-
-df.columns = feature_names
 
 df.to_csv("../data/Processed/eem_dataset.csv", index=False)
 

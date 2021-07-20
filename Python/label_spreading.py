@@ -38,7 +38,7 @@ dire = "../data/PAW FTIR data/"
 n_fold = 5
 
 # do not change
-start_n_sample = 10
+start_n_sample = 40
 end_n_sample = 90
 
 path_to_param = "Hyper_Parameter/params.pkl"
@@ -90,6 +90,9 @@ target = df["group"]
 
 stand = preprocessing.StandardScaler()
 data = stand.fit_transform(train_set)
+data = pd.DataFrame(data)
+data.columns = train_set.columns
+train_set = data
 
 le = preprocessing.LabelEncoder()
 target_cf = le.fit_transform(target)
@@ -125,7 +128,7 @@ def run_cv(train_set, target):
             target_copy = deepcopy(target)
             target_copy[list(unqueried_index_set)] = -1
 
-            label_prop_model = LabelSpreading(kernel=query_strategy)
+            label_prop_model = LabelSpreading(kernel=query_strategy, gamma=10)
             label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
             pred_label = label_prop_model.predict(train_set)
 
@@ -145,7 +148,7 @@ def run_cv(train_set, target):
             queried_index_set.add(sample_index)
 
     for i_pred in range(len(preds)):
-        if i_pred < start_n_sample:
+        if i_pred < start_n_sample - 1:
             continue
         pred_label = np.argmax(preds[i_pred], axis=1)
         accuracy = np.sum(pred_label == target) / len(target)

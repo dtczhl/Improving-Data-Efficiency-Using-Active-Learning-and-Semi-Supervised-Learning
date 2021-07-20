@@ -40,7 +40,7 @@ for k = 1:numel(fields)
     aline(k) = stdshade(data, 0.2, cMap(k, :));
     aline(k).LineStyle = my_line_style{k};
     aline(k).Marker = my_marker{k};
-    aline(k).LineWidth = 3;
+    aline(k).LineWidth = 5;
 
     mean_data = mean(data);
     
@@ -61,21 +61,6 @@ ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
 title('Uncertainty Sampling')
-
-% axes('Position', [0.6, 0.45, 0.25, 0.25])
-% box on, hold on
-% 
-% for i_row = 1:size(all_data, 1)
-%     data = all_data(i_row, 11:end);
-%     std_err = all_std(i_row, 11:end);
-%     indexOfInterest = (x >= 60) & (x <= 80);
-%     plot(x(indexOfInterest), data(indexOfInterest), line_spec{i_row}, 'linewidth', 2, 'color', cMap(i_row, :))
-%     % errorbar(x(indexOfInterest), 100 * data(indexOfInterest), 100 * std_err(indexOfInterest), line_spec{i_row}, 'linewidth', 2)
-% end
-% set(gca, 'fontsize', 18)
-% xticks([60:5:80])
-% ylim([84, 90])
-% yticks([84:2:90])
 hold off
 
 saveas(gcf, './Image/uncertainty.png')

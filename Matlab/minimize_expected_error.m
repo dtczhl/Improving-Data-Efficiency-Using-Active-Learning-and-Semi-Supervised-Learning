@@ -10,8 +10,8 @@ line_spec = {':', 'o-', '+-', '-.', '^-'};
 
 al_strategies = struct( ...
     'random', 'Baseline', ...
-    'minimize_leastConfident', 'Minimizing Expected Prediction Error', ...
-    'minimize_entropy', 'Minimizing Expected Log-loss Error');
+    'minimize_leastConfident', 'Minimizing Prediction', ...
+    'minimize_entropy', 'Minimizing Log-loss');
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
@@ -39,7 +39,7 @@ for k = 1:numel(fields)
     aline(k) = stdshade(data, 0.2, cMap(k, :));
     aline(k).LineStyle = my_line_style{k};
     aline(k).Marker = my_marker{k};
-    aline(k).LineWidth = 3;
+    aline(k).LineWidth = 5;
 
     mean_data = mean(data);
     
@@ -49,13 +49,13 @@ for k = 1:numel(fields)
      
 end
 
-hleg = legend(aline, my_legend, 'location', 'southeast', 'fontsize', 22);
+hleg = legend(aline, my_legend, 'location', 'southeast');
 % set(hleg, 'box', 'off')
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([40, 90])
 ylim([60, 100])
-xlabel('Number of labeled samples')
+xlabel('Number of labelled samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)

@@ -4,13 +4,13 @@ Collaboration work with Prof. Nitin Nitin.
 
 ## Goal
 
-Reducing the number of **human-labeled** samples, while keeping accuracy of the AI model, using active learning and semi-supervised learning.
+Reducing the number of **labeled** samples, while keeping accuracy of the AI model, using active learning and semi-supervised learning.
 
 ## Dataset
 
 1.  Plasma. Given spectrum data (an array of 1868 numbers), predict the plasma dosage (4 classes). Dosage distribution: 27, 27, 30, 30.
 
-2.  EEM. Given spectrum data (an array of 744 numbers), predict the type of solution (2 classes). SP, SE, SEP each has 24 samples. 
+2.  EEM. Given spectrum data (an array of 744 numbers), predict the type of solution (2 classes). SP, SE, SEP each has 24 samples.
 
 ## ML Model
 
@@ -63,10 +63,23 @@ We use random sampling as the baseline.
 
 ### Minimizing Expected Log-loss Error
 
+1.  Plasma. Run `Python/active_learning.py minimize_entropy`. Results are saved to `Result/minimize_entropy.csv`.
+
 ## Semi-supervised Learning
+
+### Self Training
+
+1.  Plasma. Run `Python/self_train.py [random|confident|entropy]`. Results are saved to `Result/selfTrain_[random|confident|entropy].csv`.
+
+### Label Spreading
+
+1.  Plasma. Run `Python/label_spreading.py [knn|rbf]`. Results are saved to `Result/selfSpread_[knn|rbf].csv`.
 
 
 ## Combine Active Learning and Semi-supervised Learning
+
+1.  Plasma. Run `Python/combine.py uncertainty_entropy labelSpread_rbf`. Results are saved to `Result/uncertainty_entropy_labelSpread_rbf.csv`.
+
 
 ## Result Analysis and Visualization
 

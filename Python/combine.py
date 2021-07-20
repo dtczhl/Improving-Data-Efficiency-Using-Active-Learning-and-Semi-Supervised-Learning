@@ -138,7 +138,7 @@ def run_cv(train_set, target):
             target_copy[list(unqueried_index_set)] = -1
 
             kernel = semi_supervised_learning_query_strategy.split("_")[1]
-            label_prop_model = LabelSpreading(kernel=kernel)
+            label_prop_model = LabelSpreading(kernel=kernel, gamma=10)
             label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
             pred_label = label_prop_model.predict(train_set)
 
@@ -164,7 +164,7 @@ def run_cv(train_set, target):
             queried_index_set.add(sample_index)
 
     for i_pred in range(len(preds)):
-        if i_pred < start_n_sample:
+        if i_pred < start_n_sample - 1:
             continue
         pred_label = np.argmax(preds[i_pred], axis=1)
         accuracy = np.sum(pred_label == target) / len(target)

@@ -32,9 +32,14 @@ Reducing the number of **labeled** samples, while keeping accuracy of the AI mod
 
 1.  Use optuna to get hyper-parameters for data size from [30, 90]. Each size's hyper-parameter is obtained by 30 trials. Run `Python/Hyper_Parameter/hyper_parameter_init.py`. Results are saved to `Python/Hyper_Parameter/params.pkl`
 
-2.  Run active learning algorithms. See Section Active Learning below.
+2.  See Section Active Learning, Semi-supervised Learning, Combine Active Learning and Semi-supervised Learning.
 
 ### EEM
+
+1.  Use optuna to get hyper-parameters for data size from [20, 57]. Each size's hyper-parameter is obtained by 30 trials. Run `Python/Hyper_Parameter/hyper_parameter_init_eem.py`. Results are saved to `Python/Hyper_Parameter/params_eem.pkl`
+
+2.  See Section Active Learning, Semi-supervised Learning, Combine Active Learning and Semi-supervised Learning.
+
 
 ## Random Sampling
 

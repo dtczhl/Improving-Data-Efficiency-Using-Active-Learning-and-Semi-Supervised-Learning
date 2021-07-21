@@ -9,10 +9,9 @@ line_spec = {':', 'o-', '+-', '-.', '^-'};
 % al = Active Learning
 
 al_strategies = struct( ...
-    'random', 'Baseline', ...
-    'labelSpread_rbf', 'Kernel = RBF', ...
-    'labelSpread_knn', 'Kernel = KNN');
-
+    'random_eem', 'Baseline', ...
+     'uncertainty_leastConfident_eem', 'Least Confident', ...
+     'uncertainty_entropy_eem', 'Entropy');
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
@@ -24,12 +23,14 @@ my_legend = {};
 all_data = [];
 all_std = [];
 
+
 figure(1), clf, hold on
 set(gcf, 'position', [500, 500, 1000, 650])
 
-x = 11:90;
+x = 11:56;
 
 cMap = lines(length(fields));
+
 
 for k = 1:numel(fields)
     
@@ -43,23 +44,23 @@ for k = 1:numel(fields)
 
     mean_data = mean(data);
     
-    all_data = [all_data; mean_data];
+    all_data = [all_data; mean_data];   
     all_std = [all_std; std(data)];
     my_legend = [my_legend, al_strategies.(fields{k})];
      
 end
 
 hleg = legend(aline, my_legend, 'location', 'southeast');
-% set(hleg, 'box', 'off')
+%set(hleg, 'box', 'off')
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
-xlim([40, 90])
-ylim([60, 100])
+xlim([25, 56])
+ylim([50, 90])
 xlabel('Number of labeled samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
-title('Label Spreading')
+title('Uncertainty Sampling')
 hold off
 
-saveas(gcf, './Image/label_spread.png')
+saveas(gcf, './Image/uncertainty_eem.png')

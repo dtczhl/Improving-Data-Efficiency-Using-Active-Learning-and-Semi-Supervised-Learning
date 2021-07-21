@@ -41,20 +41,20 @@ class MyObjective_InitParam(object):
         self.param = trial.suggest_float('C', 1e-5, 1e2, log=True)
 
         train_idx = np.arange(len(self.train_set))
+        train_idx = np.random.permutation(train_idx)
 
-        train_idx_run = np.random.choice(train_idx, self.n_data)
-
-        train_set_run = self.train_set.iloc[train_idx_run]
+        train_set_run = self.train_set.iloc[train_idx]
         train_set_run.reset_index(drop=True, inplace=True)
 
-        target_run = self.target[train_idx_run]
+        target_run = self.target[train_idx]
 
         folds = KFold(n_splits=self.n_fold, shuffle=True)
+        pred = np.zeros([len(train_set_run), self.num_class])
 
         self.accuracy = 0
         for fold_, (train_idx_, val_idx_) in enumerate(folds.split(train_set_run.values, target_run)):
 
-            print(len(train_idx_), len(val_idx_))
+            train_idx_ = train_idx_[:self.n_data]
 
             train_data = train_set_run.iloc[train_idx_]
             train_label = target_run[train_idx_]

@@ -9,10 +9,10 @@ line_spec = {':', 'o-', '+-', '-.', '^-'};
 % al = Active Learning
 
 al_strategies = struct( ...
-    'random', 'Baseline', ...
-    'labelSpread_rbf', 'Kernel = RBF', ...
-    'labelSpread_knn', 'Kernel = KNN');
-
+    'random_eem', 'Baseline', ...
+    'selfTrain_random_eem', 'Random', ...
+    'selfTrain_confident_eem', 'Maximum Confident', ...
+    'selfTrain_entropy_eem', 'Mininum Entropy');
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
@@ -23,6 +23,7 @@ fields = fieldnames(al_strategies);
 my_legend = {};
 all_data = [];
 all_std = [];
+
 
 figure(1), clf, hold on
 set(gcf, 'position', [500, 500, 1000, 650])
@@ -53,13 +54,13 @@ hleg = legend(aline, my_legend, 'location', 'southeast');
 % set(hleg, 'box', 'off')
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
-xlim([40, 90])
-ylim([60, 100])
+xlim([25, 56])
+ylim([50, 90])
 xlabel('Number of labeled samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
-title('Label Spreading')
+title('Self Training')
 hold off
 
-saveas(gcf, './Image/label_spread.png')
+saveas(gcf, './Image/self_train_eem.png')

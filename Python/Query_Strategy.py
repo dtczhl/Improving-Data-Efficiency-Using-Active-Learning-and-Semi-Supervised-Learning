@@ -2,6 +2,7 @@ import numpy as np
 import lightgbm as lgb
 from scipy.stats import entropy
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.svm import SVC
 
 import copy
 
@@ -37,7 +38,10 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         unqueried_index_list = list(unqueried_index_set)
 
-        prob = model.predict(train_set.iloc[unqueried_index_list])
+        if isinstance(model, SVC):
+            prob = model.predict_proba(train_set.iloc[unqueried_index_list])
+        else:
+            prob = model.predict(train_set.iloc[unqueried_index_list])
 
         if base_query_method == "leastconfident":
             utility = calculate_utility(prob, "confident")
@@ -65,7 +69,11 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         unqueried_index_list = list(unqueried_index_set)
 
-        prob = model.predict(train_set.iloc[unqueried_index_list])
+        # prob = model.predict(train_set.iloc[unqueried_index_list])
+        if isinstance(model, SVC):
+            prob = model.predict_proba(train_set.iloc[unqueried_index_list])
+        else:
+            prob = model.predict(train_set.iloc[unqueried_index_list])
 
         # construct similar array
         similar_arr = np.zeros(len(unqueried_index_list))
@@ -121,7 +129,13 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
         base_query_method = sub_fields[1]
 
         unqueried_index_list = list(unqueried_index_set)
-        prob = model.predict(train_set.iloc[unqueried_index_list])
+
+        if isinstance(model, SVC):
+            prob = model.predict_proba(train_set.iloc[unqueried_index_list])
+        else:
+            prob = model.predict(train_set.iloc[unqueried_index_list])
+        # prob = model.predict(train_set.iloc[unqueried_index_list])
+
         expected_error_arr = np.zeros(len(unqueried_index_list))
 
         i_index = 0
@@ -213,7 +227,12 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         unqueried_index_list = list(unqueried_index_set)
 
-        prob = model.predict(train_set.iloc[unqueried_index_list])
+        if isinstance(model, SVC):
+            prob = model.predict_proba(train_set.iloc[unqueried_index_list])
+        else:
+            prob = model.predict(train_set.iloc[unqueried_index_list])
+
+        # prob = model.predict(train_set.iloc[unqueried_index_list])
 
         if base_query_method == "random":
             return np.random.choice(tuple(unqueried_index_set))

@@ -142,79 +142,133 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         for k, v in zip(unqueried_index_list, prob):
 
-            target_1, target_2, target_3, target_4 \
-                = np.copy(target), np.copy(target), np.copy(target), np.copy(target)
-            target_1[k], target_2[k], target_3[k], target_4[k] = 0, 1, 2, 3
+            if isinstance(model, SVC):
 
-            queried_index_set_temp = copy.deepcopy(queried_index_set)
-            queried_index_set_temp.add(k)
+                target_1, target_2 \
+                    = np.copy(target), np.copy(target)
+                target_1[k], target_2[k] = 0, 1
 
-            # Last number,
-            if len(queried_index_set_temp) > len(hyper_params):
-                return unqueried_index_list[0]
+                queried_index_set_temp = copy.deepcopy(queried_index_set)
+                queried_index_set_temp.add(k)
 
-            train_data_1 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
-                                       label=target_1[list(queried_index_set_temp)])
-            train_data_2 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
-                                       label=target_2[list(queried_index_set_temp)])
-            train_data_3 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
-                                       label=target_3[list(queried_index_set_temp)])
-            train_data_4 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
-                                       label=target_4[list(queried_index_set_temp)])
+                # Last number,
+                if len(queried_index_set_temp) > len(hyper_params):
+                    return unqueried_index_list[0]
 
-            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
-            model_1 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_1, valid_sets=[valid_data],
-                                verbose_eval=False)
-            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
-            model_2 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_2, valid_sets=[valid_data],
-                                verbose_eval=False)
-            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
-            model_3 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_3, valid_sets=[valid_data],
-                                verbose_eval=False)
-            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
-            model_4 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_4, valid_sets=[valid_data],
-                                verbose_eval=False)
+                train_data_1 = train_set.iloc[list(queried_index_set_temp)]
+                train_label_1 = target_1[list(queried_index_set_temp)]
 
-            prob_1 = model_1.predict(train_set.iloc[unqueried_index_list])
-            prob_2 = model_2.predict(train_set.iloc[unqueried_index_list])
-            prob_3 = model_3.predict(train_set.iloc[unqueried_index_list])
-            prob_4 = model_4.predict(train_set.iloc[unqueried_index_list])
+                train_data_2 = train_set.iloc[list(queried_index_set_temp)]
+                train_label_2 = target_2[list(queried_index_set_temp)]
 
-            if base_query_method == "leastconfident":
+                model_1 = SVC(kernel='linear', C=hyper_params[len(queried_index_set)], probability=True)
+                model_1.fit(train_data_1, train_label_1)
 
-                utility_1 = calculate_utility(prob_1, "confident")
-                error_1 = np.sum(1 - utility_1)
+                model_2 = SVC(kernel='linear', C=hyper_params[len(queried_index_set)], probability=True)
+                model_2.fit(train_data_2, train_label_2)
 
-                utility_2 = calculate_utility(prob_2, "confident")
-                error_2 = np.sum(1 - utility_2)
+                prob_1 = model_1.predict_proba(train_set.iloc[unqueried_index_list])
+                prob_2 = model_2.predict_proba(train_set.iloc[unqueried_index_list])
 
-                utility_3 = calculate_utility(prob_3, "confident")
-                error_3 = np.sum(1 - utility_3)
+                if base_query_method == "leastconfident":
 
-                utility_4 = calculate_utility(prob_4, "confident")
-                error_4 = np.sum(1 - utility_4)
+                    utility_1 = calculate_utility(prob_1, "confident")
+                    error_1 = np.sum(1 - utility_1)
 
-            elif base_query_method == "entropy":
+                    utility_2 = calculate_utility(prob_2, "confident")
+                    error_2 = np.sum(1 - utility_2)
 
-                utility_1 = calculate_utility(prob_1, "entropy")
-                error_1 = np.sum(utility_1)
+                elif base_query_method == "entropy":
 
-                utility_2 = calculate_utility(prob_2, "entropy")
-                error_2 = np.sum(utility_2)
+                    utility_1 = calculate_utility(prob_1, "entropy")
+                    error_1 = np.sum(utility_1)
 
-                utility_3 = calculate_utility(prob_3, "entropy")
-                error_3 = np.sum(utility_3)
+                    utility_2 = calculate_utility(prob_2, "entropy")
+                    error_2 = np.sum(utility_2)
 
-                utility_4 = calculate_utility(prob_4, "entropy")
-                error_4 = np.sum(utility_4)
+                else:
+                    print("Unknown base_query_method={}".format(base_query_method))
+                    exit(-1)
+
+                expected_error = v[0] * error_1 + v[1] * error_2
+                expected_error_arr[i_index] = expected_error
+                i_index = i_index + 1
 
             else:
-                print("Unknown base_query_method={}".format(base_query_method))
-                exit(-1)
 
-            expected_error = v[0] * error_1 + v[1] * error_2 + v[2] * error_3 + v[3] * error_4
-            expected_error_arr[i_index] = expected_error
-            i_index = i_index + 1
+                target_1, target_2, target_3, target_4 \
+                    = np.copy(target), np.copy(target), np.copy(target), np.copy(target)
+                target_1[k], target_2[k], target_3[k], target_4[k] = 0, 1, 2, 3
+
+                queried_index_set_temp = copy.deepcopy(queried_index_set)
+                queried_index_set_temp.add(k)
+
+                # Last number,
+                if len(queried_index_set_temp) > len(hyper_params):
+                    return unqueried_index_list[0]
+
+                train_data_1 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                           label=target_1[list(queried_index_set_temp)])
+                train_data_2 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                           label=target_2[list(queried_index_set_temp)])
+                train_data_3 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                           label=target_3[list(queried_index_set_temp)])
+                train_data_4 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
+                                           label=target_4[list(queried_index_set_temp)])
+
+                valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+                model_1 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_1, valid_sets=[valid_data],
+                                    verbose_eval=False)
+                valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+                model_2 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_2, valid_sets=[valid_data],
+                                    verbose_eval=False)
+                valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+                model_3 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_3, valid_sets=[valid_data],
+                                    verbose_eval=False)
+                valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
+                model_4 = lgb.train(hyper_params[len(queried_index_set_temp)], train_data_4, valid_sets=[valid_data],
+                                    verbose_eval=False)
+
+                prob_1 = model_1.predict(train_set.iloc[unqueried_index_list])
+                prob_2 = model_2.predict(train_set.iloc[unqueried_index_list])
+                prob_3 = model_3.predict(train_set.iloc[unqueried_index_list])
+                prob_4 = model_4.predict(train_set.iloc[unqueried_index_list])
+
+                if base_query_method == "leastconfident":
+
+                    utility_1 = calculate_utility(prob_1, "confident")
+                    error_1 = np.sum(1 - utility_1)
+
+                    utility_2 = calculate_utility(prob_2, "confident")
+                    error_2 = np.sum(1 - utility_2)
+
+                    utility_3 = calculate_utility(prob_3, "confident")
+                    error_3 = np.sum(1 - utility_3)
+
+                    utility_4 = calculate_utility(prob_4, "confident")
+                    error_4 = np.sum(1 - utility_4)
+
+                elif base_query_method == "entropy":
+
+                    utility_1 = calculate_utility(prob_1, "entropy")
+                    error_1 = np.sum(utility_1)
+
+                    utility_2 = calculate_utility(prob_2, "entropy")
+                    error_2 = np.sum(utility_2)
+
+                    utility_3 = calculate_utility(prob_3, "entropy")
+                    error_3 = np.sum(utility_3)
+
+                    utility_4 = calculate_utility(prob_4, "entropy")
+                    error_4 = np.sum(utility_4)
+
+                else:
+                    print("Unknown base_query_method={}".format(base_query_method))
+                    exit(-1)
+
+                expected_error = v[0] * error_1 + v[1] * error_2 + v[2] * error_3 + v[3] * error_4
+                expected_error_arr[i_index] = expected_error
+                i_index = i_index + 1
 
         sample_index = np.argmin(expected_error_arr)
         sample_index = unqueried_index_list[sample_index]

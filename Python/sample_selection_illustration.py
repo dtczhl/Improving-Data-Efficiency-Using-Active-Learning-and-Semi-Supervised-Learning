@@ -3,14 +3,19 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
-from sklearn.semi_supervised import LabelSpreading
 import optuna
 from numpy import savetxt
 import pickle
 import os
 
+import matplotlib.pyplot as plt
+
 import argparse
 from argparse import RawTextHelpFormatter
+
+from sklearn.decomposition import PCA
+
+import random
 
 import lightgbm as lgb
 
@@ -19,20 +24,13 @@ from copy import deepcopy
 from MyObjective import MyObjective
 from Query_Strategy import query_index
 
-
-# ------ Configurations ------
-
-# label_spreading
-
-
-# take in as arguments
-# query_strategy = "random"
-
-# number of runs for each reduced number of samples
-n_run = 10
+random.seed(123)
+np.random.seed(123)
 
 # data directory
 dire = "../data/PAW FTIR data/"
+
+n_run = 1
 
 # number of folds for cross-validation. !Do not change
 n_fold = 5
@@ -48,17 +46,17 @@ path_to_param = "Hyper_Parameter/params.pkl"
 # np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 
-help_message = "Label Spreading. " \
+help_message = "Active Learning Sampling Method. " \
     "Supported Methods:\n" \
-    "Kernel: [knn|rbf]"
-parser = argparse.ArgumentParser(description="Semi-supervised Learning Strategies", formatter_class=RawTextHelpFormatter)
+    "Random: random;\n" \
+    "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
+    "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson|euclidean]_[x];\n" \
+    "Minimize Expected Error: minimize_leastConfident, minimize_entropy"
+parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
 
 query_strategy = args.sampling_method
-
-
-print("query_strategy={}\nn_run={}".format(query_strategy, n_run))
 
 filesnames = os.listdir(dire)
 filesnames.sort(key=lambda x: int(x.split('-')[0]))
@@ -115,37 +113,82 @@ def run_cv(train_set, target):
         unqueried_index_set = set(train_idx)
         queried_index_set = set()
 
-        # randomly select instances for initialization
+        queried_index_list = []
+
+        # randomly select 10 instances for initialization
         for _ in range(start_n_sample):
             sample_index = np.random.choice(tuple(unqueried_index_set))
             unqueried_index_set.remove(sample_index)
             queried_index_set.add(sample_index)
+            queried_index_list.append(sample_index)
 
         while len(queried_index_set) <= end_n_sample:
-
+            # add one sample
             print("\t #fold: {}/{}, #sample: {}/{}".format(fold_+1, n_fold, len(queried_index_set), end_n_sample))
 
-            target_copy = deepcopy(target)
-            target_copy[list(unqueried_index_set)] = -1
+            train_data = lgb.Dataset(train_set.iloc[queried_index_list], label=target[queried_index_list])
+            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target[val_idx])
 
-            label_prop_model = LabelSpreading(kernel=query_strategy, gamma=1)
-            label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
-            pred_label = label_prop_model.predict(train_set)
+            model = lgb.train(hyper_params[len(queried_index_list)], train_data, valid_sets=[valid_data], verbose_eval=False)
 
-            pred_label[val_idx] = target[val_idx]
-            pred_label[list(queried_index_set)] = target[list(queried_index_set)]
+            preds[len(queried_index_list)-1, val_idx, :] = model.predict(train_set.iloc[val_idx])
 
-            # model evaluation
-            train_data = lgb.Dataset(train_set.iloc[train_idx], label=pred_label[train_idx])
-            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=pred_label[val_idx])
+            sample_index = query_index(model=model, train_set=train_set,
+                                       queried_index_set=queried_index_list,
+                                       unqueried_index_set=unqueried_index_set,
+                                       query_strategy=query_strategy, target=target,
+                                       val_idx=val_idx, hyper_params=hyper_params)
 
-            model = lgb.train(hyper_params[end_n_sample], train_data, valid_sets=[valid_data], verbose_eval=False)
-
-            preds[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx])
-
-            sample_index = np.random.choice(tuple(unqueried_index_set))
             unqueried_index_set.remove(sample_index)
             queried_index_set.add(sample_index)
+
+            queried_index_list.append(sample_index)
+
+        # print(sample_seq)
+
+        pca = PCA(n_components=2)
+        principalComponents = pca.fit_transform(train_set.iloc[queried_index_list])
+        principalDf = pd.DataFrame(data=principalComponents
+                                   , columns=['principal component 1', 'principal component 2'])
+
+        principalDf["target"] = target[queried_index_list]
+        finalDf = principalDf
+
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_xlabel('Principal Component 1', fontsize=24)
+        ax.set_ylabel('Principal Component 2', fontsize=24)
+
+        # TITLE
+        ax.set_title('Uncertainty Sampling', fontsize=24, fontweight="bold")
+
+        plt.xticks(fontsize=22)
+        plt.yticks(fontsize=22)
+
+        targets = [0, 1, 2, 3]
+        colors = ['r', 'g', 'b', 'y']
+        for target, color in zip(targets, colors):
+            indicesToKeep = finalDf['target'] == target
+            ax.scatter(finalDf.loc[indicesToKeep, 'principal component 1']
+                       , finalDf.loc[indicesToKeep, 'principal component 2']
+                       , c=color
+                       , s=100)
+        ax.legend(["Dosage 1", "Dosage 2", "Dosage 3", "Dosage 4"], fontsize=20)
+        ax.grid()
+
+        for i in range(0, start_n_sample):
+            plt.text(finalDf.loc[i, 'principal component 1']-1.6,
+                     finalDf.loc[i, 'principal component 2']-1.5, s='*', fontsize=20)
+
+        for i in range(start_n_sample, start_n_sample + 10):
+            plt.text(finalDf.loc[i, 'principal component 1']-2.2,
+                     finalDf.loc[i, 'principal component 2']-3.5, s=str(i-start_n_sample+1), fontsize=20)
+
+
+        # plt.show()
+        plt.savefig("../Matlab/Image/sample_seq_{}.png".format(query_strategy))
+
+        exit()
 
     for i_pred in range(len(preds)):
         if i_pred < start_n_sample - 1:
@@ -163,12 +206,3 @@ for i_run in range(n_run):
     result_pred[i_run] = run_cv(train_set, target_cf)
 
 print(result_pred)
-
-# do not want dot in filenames
-query_strategy = query_strategy.replace('.', '')
-print("Saving result to ./Result/labelSpread_{}.csv".format(query_strategy))
-savetxt("./Result/labelSpread_{}.csv".format(query_strategy), result_pred, delimiter=',')
-
-
-
-

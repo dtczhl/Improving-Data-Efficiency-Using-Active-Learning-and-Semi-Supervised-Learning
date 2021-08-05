@@ -60,7 +60,7 @@ help_message = "Combine Active Learning and Semi-supervised Learning. " \
     "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
     "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson|euclidean]_[x];\n" \
     "Minimize Expected Error: minimize_leastConfident, minimize_entropy;\n" \
-    "Supported Methods (Semi_supervised Learning)"
+    "Supported Methods (Semi_supervised Learning): labelSpread_rbf"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("active_learning", type=str, help=help_message)
 parser.add_argument("semi_supervised_learning", type=str, help=help_message)
@@ -138,7 +138,7 @@ def run_cv(train_set, target):
             target_copy[list(unqueried_index_set)] = -1
 
             kernel = semi_supervised_learning_query_strategy.split("_")[1]
-            label_prop_model = LabelSpreading(kernel=kernel, gamma=10)
+            label_prop_model = LabelSpreading(kernel=kernel, gamma=0.1)
             label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
             pred_label = label_prop_model.predict(train_set)
 

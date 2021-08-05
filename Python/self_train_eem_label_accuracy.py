@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
-from sklearn.semi_supervised import LabelSpreading
 import optuna
 from numpy import savetxt
 import pickle
@@ -22,16 +21,23 @@ from Query_Strategy import query_index
 
 # ------ Configurations ------
 
-# label_spreading
+# self_train
 
 
 # take in as arguments
 # query_strategy = "random"
 
+# do not change
+# n_sample_arr = list(range(3, 91))
+
 # number of runs for each reduced number of samples
 n_run = 20
 
+# optuna number of trails
+# n_trial = 5
+
 eem_df = pd.read_excel('../data/se_sp_sep_260.xlsx', sheet_name='Sheet2', engine='openpyxl')
+
 
 # number of folds for cross-validation. !Do not change
 n_fold = 5
@@ -47,10 +53,10 @@ path_to_param = "Hyper_Parameter/params_eem.pkl"
 # np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 
-help_message = "Label Spreading. " \
+help_message = "Self Training. " \
     "Supported Methods:\n" \
-    "Kernel: [knn|rbf]"
-parser = argparse.ArgumentParser(description="Semi-supervised Learning Strategies", formatter_class=RawTextHelpFormatter)
+    "Self Training: [random|confident|entropy]"
+parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
 
@@ -58,6 +64,7 @@ query_strategy = args.sampling_method
 
 
 print("query_strategy={}\nn_run={}".format(query_strategy, n_run))
+
 
 # extract sp, se, and sep
 sp_df = eem_df.filter(regex='SP[0-9]+')
@@ -95,6 +102,7 @@ target_cf = le.fit_transform(target)
 
 num_class = len(set(target_cf))
 
+
 # Load Hyper-parameters
 with open(path_to_param, "rb") as f:
     hyper_params = pickle.load(f)
@@ -105,6 +113,8 @@ def run_cv(train_set, target):
     folds = KFold(n_splits=n_fold, shuffle=True)
     preds = np.zeros([end_n_sample, len(train_set), num_class])
     pred_accuracy = np.zeros(end_n_sample)
+    label_accuracy = np.zeros(end_n_sample)
+
 
     for fold_, (train_idx, val_idx) in enumerate(folds.split(train_set.values, target)):
 
@@ -121,33 +131,63 @@ def run_cv(train_set, target):
 
             print("\t #fold: {}/{}, #sample: {}/{}".format(fold_+1, n_fold, len(queried_index_set), end_n_sample))
 
+            # incrementally select data instances
+            queried_index_set_copy = deepcopy(queried_index_set)
+            unqueried_index_set_copy = deepcopy(unqueried_index_set)
             target_copy = deepcopy(target)
-            target_copy[list(unqueried_index_set)] = -1
 
-            label_prop_model = LabelSpreading(kernel=query_strategy, gamma=0.1)
-            label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
-            pred_label = label_prop_model.predict(train_set)
+            n_correct_label = 0
 
-            pred_label[val_idx] = target[val_idx]
-            pred_label[list(queried_index_set)] = target[list(queried_index_set)]
+            while len(unqueried_index_set_copy) > 0 and len(queried_index_set_copy) <= end_n_sample:
+
+                train_data = train_set.iloc[list(queried_index_set)]
+                train_label = target[list(queried_index_set)]
+
+                val_data = train_set.iloc[val_idx]
+                val_label = target[val_idx]
+
+                model = SVC(kernel='linear', C=hyper_params[len(queried_index_set)], probability=True)
+                model.fit(train_data, train_label)
+
+                # train_data = lgb.Dataset(train_set.iloc[list(queried_index_set_copy)], label=target_copy[list(queried_index_set_copy)])
+                # valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target_copy[val_idx])
+
+                # model = lgb.train(hyper_params[len(queried_index_set_copy)], train_data, valid_sets=[valid_data], verbose_eval=False)
+
+
+                sample_index = query_index(model=model, train_set=train_set,
+                                           queried_index_set=queried_index_set_copy,
+                                           unqueried_index_set=unqueried_index_set_copy,
+                                           query_strategy="selfTrain_"+query_strategy, target=target_copy,
+                                           val_idx=val_idx, hyper_params=hyper_params)
+
+
+                target_copy[sample_index] = np.argmax(np.squeeze(model.predict_proba([train_set.iloc[sample_index]])))
+                unqueried_index_set_copy.remove(sample_index)
+                queried_index_set_copy.add(sample_index)
+
+                if target_copy[sample_index] == target[sample_index]:
+                    n_correct_label += 1
+
+            label_accuracy[len(queried_index_set) - 1] += n_correct_label
 
             # model evaluation
-            train_data = train_set.iloc[train_idx]
-            train_label = pred_label[train_idx]
+            train_data = train_set.iloc[list(queried_index_set)]
+            train_label = target[list(queried_index_set)]
+
+            val_data = train_set.iloc[val_idx]
+            val_label = target[val_idx]
 
             model = SVC(kernel='linear', C=hyper_params[len(queried_index_set)], probability=True)
             model.fit(train_data, train_label)
-
-            # train_data = lgb.Dataset(train_set.iloc[train_idx], label=pred_label[train_idx])
-            # valid_data = lgb.Dataset(train_set.iloc[val_idx], label=pred_label[val_idx])
-            #
-            # model = lgb.train(hyper_params[end_n_sample], train_data, valid_sets=[valid_data], verbose_eval=False)
 
             preds[len(queried_index_set) - 1, val_idx, :] = model.predict_proba(train_set.iloc[val_idx])
 
             sample_index = np.random.choice(tuple(unqueried_index_set))
             unqueried_index_set.remove(sample_index)
             queried_index_set.add(sample_index)
+
+    label_accuracy /= n_fold
 
     for i_pred in range(len(preds)):
         if i_pred < start_n_sample - 1:
@@ -156,20 +196,27 @@ def run_cv(train_set, target):
         accuracy = np.sum(pred_label == target) / len(target)
         pred_accuracy[i_pred] = accuracy
 
-    return pred_accuracy
+    return pred_accuracy, label_accuracy
 
 
 result_pred = np.zeros([n_run, end_n_sample])
+result_label = np.zeros([n_run, end_n_sample])
 for i_run in range(n_run):
     print("------ Round: {}/{} -------------------------------".format(i_run+1, n_run))
-    result_pred[i_run] = run_cv(train_set, target_cf)
+    result_pred[i_run], result_label[i_run] = run_cv(train_set, target_cf)
 
-print(result_pred)
+# print(result_pred)
+print(result_label)
 
 # do not want dot in filenames
+# query_strategy = query_strategy.replace('.', '')
+# print("Saving result to ./Result/selfTrain_{}_eem.csv".format(query_strategy))
+# savetxt("./Result/selfTrain_{}_eem.csv".format(query_strategy), result_pred, delimiter=',')
+
+
 query_strategy = query_strategy.replace('.', '')
-print("Saving result to ./Result/labelSpread_{}_eem.csv".format(query_strategy))
-savetxt("./Result/labelSpread_{}_eem.csv".format(query_strategy), result_pred, delimiter=',')
+print("Saving result_label to ./Result/selfTrain_{}_label_accuracy_eem.csv".format(query_strategy))
+savetxt("./Result/selfTrain_{}_label_accuracy_eem.csv".format(query_strategy), result_label, delimiter=',')
 
 
 

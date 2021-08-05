@@ -41,13 +41,14 @@ barh([0], [count(1);count(2)], 0.5, 'stacked')
 set(gca, 'xgrid', 'on', 'fontsize', 30)
 xlabel('Number of samples')
 ylabel('EEM')
-legend({'With T7', 'W/o T7-1', 'W/o T7-2'})
-ylim([-1, 2])
+legend({'T7 infected E. coli', 'T7 only', 'E. coli only'})
+xlim([0, 60])
+ylim([-0.5, 3])
 yticks([0, 1])
-yticklabels({'False', 'True'})
+yticklabels({'Control', 'Target'})
 saveas(gcf, 'Image/eem_count.png')
 
-title_arr = {'With T7', 'W/o T7-1', 'W/o T7-2'};
+title_arr = {'T7 infected E. coli', 'T7 only', 'E. coli only'};
 for i = 1:numel(X)
     i_sample = find(group == X(i));
     i_sample = i_sample(1);

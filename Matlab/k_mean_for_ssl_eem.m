@@ -30,9 +30,9 @@ set(gcf, 'position', [500, 500, 800, 600])
 h = heatmap(confuse_matrix);
 xlabel('Predicted Class')
 ylabel('Actual Class')
-set(gca, 'fontsize', 24)
+set(gca, 'fontsize', 30)
 caxis([0, 100]);
-title('EEM')
+title('Pathogen Detection')
 saveas(gcf, 'Image/k_mean_eem.png')
 
 

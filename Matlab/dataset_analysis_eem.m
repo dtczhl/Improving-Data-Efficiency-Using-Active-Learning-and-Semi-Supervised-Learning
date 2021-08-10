@@ -40,7 +40,7 @@ barh([1], [count(3)], 0.5)
 barh([0], [count(1);count(2)], 0.5, 'stacked')
 set(gca, 'xgrid', 'on', 'fontsize', 30)
 xlabel('Number of samples')
-ylabel('EEM')
+ylabel('Pathogen Detect')
 legend({'T7 infected E. coli', 'T7 only', 'E. coli only'})
 xlim([0, 60])
 ylim([-0.5, 3])
@@ -70,8 +70,8 @@ for i = 1:numel(X)
     plot_matrix = abs(plot_matrix);
     h = heatmap(plot_matrix);
     grid off
-    xlabel('EX (Hz)')
-    ylabel('EM (Hz)')
+    xlabel('Excitation Wavelength (nm)')
+    ylabel('Emission Wavelength (nm)')
     
     xticks = unique(em_data);
     customxlabels = string(xticks);

@@ -35,10 +35,11 @@ confuse_matrix = confuse_matrix * 100;
 figure(1), clf
 set(gcf, 'position', [500, 500, 800, 600])
 h = heatmap(confuse_matrix);
+% h.Fontsize = 30;
 xlabel('Predicted Class')
 ylabel('Actual Class')
-set(gca, 'fontsize', 24)
+set(gca, 'fontsize', 30)
 caxis([0, 100]);
-title('Plasma')
+title('Plasma Dosage')
 saveas(gcf, 'Image/k_mean_plasma.png')
 

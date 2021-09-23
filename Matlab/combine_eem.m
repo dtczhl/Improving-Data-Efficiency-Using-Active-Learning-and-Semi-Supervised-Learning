@@ -58,7 +58,7 @@ xlabel('Number of labeled samples')
 ylabel('Accuracy (%)')
 xticks(10:10:90)
 yticks(20:10:100)
-title('Combined')
+% title('Combined')
 hold off
 
 saveas(gcf, './Image/combine_eem.png')

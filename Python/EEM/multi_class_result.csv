@@ -1,0 +1,14 @@
+Model,Accuracy
+Multivariate Bernoulli,0.58
+Decision Tree,0.80
+Extra Tree,0.74
+Extra Trees,0.89
+Gaussian Naive Bayes,0.79
+K-nearest Neighbor,0.80
+Linear Discriminant Analysis,0.87
+Linear Support Vector,0.98
+Multi-layer Perceptron,0.95
+Nearest Centroid,0.69
+Quadratic Discriminant Analysis,0.48
+Random Forest,0.89
+Ridge Regression,0.96

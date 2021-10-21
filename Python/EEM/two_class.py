@@ -21,7 +21,7 @@ models = [
     KNeighborsClassifier(1),
     KNeighborsClassifier(2),
     KNeighborsClassifier(3),
-    SVC(kernel='linear', C=0.02),
+    SVC(kernel='linear'),
     SVC(kernel='poly'),
     SVC(kernel='rbf'),
     SVC(kernel='sigmoid'),
@@ -57,10 +57,10 @@ n_run = 100
 n_fold = 5
 
 # path to the data file
-eem_df = pd.read_excel('../data/se_sp_sep_260.xlsx', sheet_name='Sheet2', engine='openpyxl')
+eem_df = pd.read_excel('../../data/se_sp_sep_260.xlsx', sheet_name='Sheet2', engine='openpyxl')
 
 # save results
-save_file = './EEM/eem_binary_result.csv'
+save_file = './eem_binary_result.csv'
 f = open(save_file, "w")
 f.write("Model,sp-sep,se-sep,sp+se-sep\n")
 

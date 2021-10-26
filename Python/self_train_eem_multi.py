@@ -10,8 +10,7 @@ import os
 
 import argparse
 from argparse import RawTextHelpFormatter
-
-import lightgbm as lgb
+from sklearn.linear_model import LogisticRegression
 
 from copy import deepcopy
 
@@ -43,10 +42,10 @@ dire = "../data/PAW FTIR data/"
 n_fold = 5
 
 # do not change
-start_n_sample = 40
-end_n_sample = 90
+start_n_sample = 25
+end_n_sample = 127
 
-path_to_param = "Hyper_Parameter/params.pkl"
+path_to_param = "Hyper_Parameter/params_eem_multi.pkl"
 
 # --- End of Configurations ---
 
@@ -65,42 +64,51 @@ query_strategy = args.sampling_method
 
 print("query_strategy={}\nn_run={}".format(query_strategy, n_run))
 
-filesnames = os.listdir(dire)
-filesnames.sort(key=lambda x: int(x.split('-')[0]))
+# path to the data file
+eem_df = pd.read_excel('../data/2ET_40_trim20_L.xlsx', sheet_name='Sheet1', engine='openpyxl')
 
-# Below is to read all files from the directory into Pandas DataFrame
-df = pd.DataFrame()
-for i_file in range(len(filesnames)):
-    with open(os.path.join(dire, filesnames[i_file])) as f:
-        for i_row, row in enumerate(f):
-            if i_row < 4:
-                continue
-            else:
-                row = row.replace('\t', ' ')
-                row = row.replace('\n', ' ')
-                temp = row.split()
-                col_name = float(temp[0])
-                col_value = float(temp[1])
-                df.loc[i_file, col_name] = col_value
-        df.loc[i_file, 'group'] = filesnames[i_file][0:3]
-# print(df.shape)
+# extract sp, se, and sep
+ep_df = eem_df.filter(regex='2EP[0-9]+')
+p_df = eem_df.filter(regex='1P[0-9]+')
+e_df = eem_df.filter(regex='2E[0-9]+')
+l_df = eem_df.filter(regex='2LP[0-9]+')
 
-# "group" column refers to Y, like naocl concentration; originally it is 0ppm; I convert it to numeric number 0
-df["group"] = df["group"].apply(lambda x: x.split('-')[0])
-df["group"] = df["group"].astype("int64")  # change to number data type
-# print(df.head())
 
-train_set = df.drop(["group"], axis=1)
-target = df["group"]
+# transpose
+ep_df = ep_df.transpose()
+p_df = p_df.transpose()
+e_df = e_df.transpose()
+l_df = l_df.transpose()
 
+# add label
+ep_df["Label"] = 0
+p_df["Label"] = 1
+e_df["Label"] = 2
+l_df["Label"] = 3
+
+# complete datasets for sp-sep and se-sep
+all_df = pd.concat([ep_df, p_df, e_df, l_df], ignore_index=True)
+
+# change column names
+column_names = all_df.columns
+new_column_names = ['Label' if x == 'Label' else 'Feature_' + str(x+1) for x in column_names]
+all_df.columns = new_column_names
+
+# training data for sp vs sep
+train_set_all = all_df.drop(["Label"], axis=1)
+target_all = all_df["Label"]
+
+# data preprocessing
+#  normalization
 stand = preprocessing.StandardScaler()
-data = stand.fit_transform(train_set)
-data = pd.DataFrame(data)
-data.columns = train_set.columns
+data_all = stand.fit_transform(train_set_all)
+data = pd.DataFrame(data_all)
+data.columns = train_set_all.columns
 train_set = data
 
+# re-labeling
 le = preprocessing.LabelEncoder()
-target_cf = le.fit_transform(target)
+target_cf = le.fit_transform(target_all)
 
 num_class = len(set(target_cf))
 
@@ -137,31 +145,39 @@ def run_cv(train_set, target):
 
             while len(unqueried_index_set_copy) > 0 and len(queried_index_set_copy) <= end_n_sample:
 
-                train_data = lgb.Dataset(train_set.iloc[list(queried_index_set_copy)], label=target_copy[list(queried_index_set_copy)])
-                valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target_copy[val_idx])
+                train_data = train_set.iloc[list(queried_index_set)]
+                train_label = target[list(queried_index_set)]
 
-                model = lgb.train(hyper_params[len(queried_index_set_copy)], train_data, valid_sets=[valid_data], verbose_eval=False)
+                val_data = train_set.iloc[val_idx]
+                val_label = target[val_idx]
+
+                model = LogisticRegression(solver='newton-cg', multi_class='multinomial',
+                                           C=hyper_params[len(queried_index_set)])
+                model.fit(train_data, train_label)
 
                 sample_index = query_index(model=model, train_set=train_set,
                                            queried_index_set=queried_index_set_copy,
                                            unqueried_index_set=unqueried_index_set_copy,
-                                           query_strategy="selfTrain_"+query_strategy, target=target_copy,
+                                           query_strategy="selfTrain_" + query_strategy, target=target_copy,
                                            val_idx=val_idx, hyper_params=hyper_params)
 
-                target_copy[sample_index] = np.argmax(np.squeeze(model.predict(train_set.iloc[sample_index])))
+                target_copy[sample_index] = np.argmax(np.squeeze(model.predict_proba([train_set.iloc[sample_index]])))
                 unqueried_index_set_copy.remove(sample_index)
                 queried_index_set_copy.add(sample_index)
 
             # model evaluation
-            train_data = lgb.Dataset(train_set.iloc[list(queried_index_set_copy)],
-                                     label=target_copy[list(queried_index_set_copy)])
-            valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target_copy[val_idx])
 
-            # !!! model = lgb.train(hyper_params[end_n_sample], train_data, valid_sets=[valid_data], verbose_eval=False)
-            model = lgb.train(hyper_params[len(queried_index_set)], train_data, valid_sets=[valid_data], verbose_eval=False)
+            train_data = train_set.iloc[list(queried_index_set_copy)]
+            train_label = target[list(queried_index_set_copy)]
 
+            val_data = train_set.iloc[val_idx]
+            val_label = target[val_idx]
 
-            preds[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx])
+            model = LogisticRegression(solver='newton-cg', multi_class='multinomial',
+                                       C=hyper_params[len(queried_index_set)])
+            model.fit(train_data, train_label)
+
+            preds[len(queried_index_set) - 1, val_idx, :] = model.predict_proba(train_set.iloc[val_idx])
 
             sample_index = np.random.choice(tuple(unqueried_index_set))
             unqueried_index_set.remove(sample_index)
@@ -186,8 +202,8 @@ print(result_pred)
 
 # do not want dot in filenames
 query_strategy = query_strategy.replace('.', '')
-print("Saving result to ./Result/selfTrain_{}.csv".format(query_strategy))
-savetxt("./Result/selfTrain_{}.csv".format(query_strategy), result_pred, delimiter=',')
+print("Saving result to ./Result/selfTrain_{}_eem_multi.csv".format(query_strategy))
+savetxt("./Result/selfTrain_{}_eem_multi.csv".format(query_strategy), result_pred, delimiter=',')
 
 
 

@@ -3,6 +3,7 @@ import lightgbm as lgb
 from scipy.stats import entropy
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 
 import copy
 
@@ -38,7 +39,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         unqueried_index_list = list(unqueried_index_set)
 
-        if isinstance(model, SVC):
+        if isinstance(model, SVC) or isinstance(model, LogisticRegression):
             prob = model.predict_proba(train_set.iloc[unqueried_index_list])
         else:
             prob = model.predict(train_set.iloc[unqueried_index_list])
@@ -70,7 +71,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
         unqueried_index_list = list(unqueried_index_set)
 
         # prob = model.predict(train_set.iloc[unqueried_index_list])
-        if isinstance(model, SVC):
+        if isinstance(model, SVC) or isinstance(model, LogisticRegression):
             prob = model.predict_proba(train_set.iloc[unqueried_index_list])
         else:
             prob = model.predict(train_set.iloc[unqueried_index_list])
@@ -130,7 +131,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         unqueried_index_list = list(unqueried_index_set)
 
-        if isinstance(model, SVC):
+        if isinstance(model, SVC) or isinstance(model, LogisticRegression):
             prob = model.predict_proba(train_set.iloc[unqueried_index_list])
         else:
             prob = model.predict(train_set.iloc[unqueried_index_list])
@@ -142,7 +143,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         for k, v in zip(unqueried_index_list, prob):
 
-            if isinstance(model, SVC):
+            if isinstance(model, SVC) or isinstance(model, LogisticRegression):
 
                 target_1, target_2 \
                     = np.copy(target), np.copy(target)
@@ -281,7 +282,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         unqueried_index_list = list(unqueried_index_set)
 
-        if isinstance(model, SVC):
+        if isinstance(model, SVC) or isinstance(model, LogisticRegression):
             prob = model.predict_proba(train_set.iloc[unqueried_index_list])
         else:
             prob = model.predict(train_set.iloc[unqueried_index_list])

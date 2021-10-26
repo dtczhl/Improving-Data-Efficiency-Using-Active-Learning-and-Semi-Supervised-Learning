@@ -1,17 +1,11 @@
-"""
-    For EEM data. LinearSVM
-"""
-
 import numpy as np
-
-from sklearn.svm import SVC
-
 import optuna
 import sklearn
 from sklearn.model_selection import KFold
+from sklearn.linear_model import LogisticRegression
 
 
-class MyObjective_InitParam(object):
+class MyObjective_InitParamEEMMulti(object):
 
     def __init__(self, train_set, target, num_class, n_data, n_fold):
 
@@ -19,22 +13,16 @@ class MyObjective_InitParam(object):
 
         self.target = target
 
+        self.num_class = num_class
+
         self.n_fold = n_fold
 
         self.n_data = n_data
 
         self.best_param = None
 
-        self.num_class = num_class
-
         self.accuracy = 0
         self.best_accuracy = 0
-
-        self.loss = 0
-        self.best_loss = 0
-
-        self.best_booster = None
-        self.booster = None
 
     def __call__(self, trial):
 
@@ -49,9 +37,8 @@ class MyObjective_InitParam(object):
         target_run = self.target[train_idx]
 
         folds = KFold(n_splits=self.n_fold, shuffle=True)
-        pred = np.zeros([len(train_set_run), self.num_class])
-
         self.accuracy = 0
+
         for fold_, (train_idx_, val_idx_) in enumerate(folds.split(train_set_run.values, target_run)):
 
             train_idx_ = train_idx_[:self.n_data]
@@ -62,11 +49,10 @@ class MyObjective_InitParam(object):
             val_data = train_set_run.iloc[val_idx_]
             val_label = target_run[val_idx_]
 
-            model = SVC(kernel='linear', C=self.param)
-
+            model = LogisticRegression(solver='newton-cg', multi_class='multinomial', C=self.param)
             model.fit(train_data, train_label)
-            pred = model.predict(val_data)
-            pred_label = 1 * (pred >= 0.5)
+            pred_label = model.predict(val_data)
+
             self.accuracy += np.sum(pred_label == val_label) / len(val_label) / self.n_fold
 
         return self.accuracy

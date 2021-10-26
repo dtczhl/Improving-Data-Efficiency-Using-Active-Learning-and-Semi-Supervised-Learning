@@ -11,6 +11,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import LinearSVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import NearestCentroid
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
@@ -20,6 +21,7 @@ from sklearn.linear_model import RidgeClassifier
 import warnings
 
 models = [
+    LogisticRegression(solver='newton-cg', multi_class='multinomial'),
     BernoulliNB(),
     DecisionTreeClassifier(),
     ExtraTreeClassifier(),
@@ -36,6 +38,7 @@ models = [
 ]
 
 model_names = [
+    'LogisticRegression',
     'Multivariate Bernoulli',
     'Decision Tree',
     'Extra Tree',
@@ -71,7 +74,6 @@ eem_df = pd.read_excel('../../data/2ET_40_trim20_L.xlsx', sheet_name='Sheet1', e
 save_file = './multi_class_result.csv'
 f = open(save_file, "w")
 f.write("Model,Accuracy\n")
-
 
 # extract sp, se, and sep
 ep_df = eem_df.filter(regex='2EP[0-9]+')

@@ -3,14 +3,17 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
+from sklearn.semi_supervised import LabelSpreading
 import optuna
 from numpy import savetxt
 import pickle
 import os
+from sklearn.linear_model import LogisticRegression
 
 import argparse
 from argparse import RawTextHelpFormatter
-from sklearn.linear_model import LogisticRegression
+
+import lightgbm as lgb
 
 from copy import deepcopy
 
@@ -20,14 +23,11 @@ from Query_Strategy import query_index
 
 # ------ Configurations ------
 
-# self_train
+# label_spreading
 
 
 # take in as arguments
 # query_strategy = "random"
-
-# do not change
-# n_sample_arr = list(range(3, 91))
 
 # number of runs for each reduced number of samples
 n_run = 10
@@ -46,10 +46,10 @@ path_to_param = "Hyper_Parameter/params_eem_multi.pkl"
 # np.random.seed(123)
 optuna.logging.set_verbosity(optuna.logging.FATAL)
 
-help_message = "Self Training. " \
+help_message = "Label Spreading. " \
     "Supported Methods:\n" \
-    "Self Training: [random|confident|entropy]"
-parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
+    "Kernel: [knn|rbf]"
+parser = argparse.ArgumentParser(description="Semi-supervised Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("sampling_method", type=str, help=help_message)
 args = parser.parse_args()
 
@@ -106,6 +106,7 @@ target_cf = le.fit_transform(target_all)
 
 num_class = len(set(target_cf))
 
+
 # Load Hyper-parameters
 with open(path_to_param, "rb") as f:
     hyper_params = pickle.load(f)
@@ -132,41 +133,19 @@ def run_cv(train_set, target):
 
             print("\t #fold: {}/{}, #sample: {}/{}".format(fold_+1, n_fold, len(queried_index_set), end_n_sample))
 
-            # incrementally select data instances
-            queried_index_set_copy = deepcopy(queried_index_set)
-            unqueried_index_set_copy = deepcopy(unqueried_index_set)
             target_copy = deepcopy(target)
+            target_copy[list(unqueried_index_set)] = -1
 
-            while len(unqueried_index_set_copy) > 0 and len(queried_index_set_copy) <= end_n_sample:
+            label_prop_model = LabelSpreading(kernel=query_strategy, gamma=0.1)
+            label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
+            pred_label = label_prop_model.predict(train_set)
 
-                train_data = train_set.iloc[list(queried_index_set_copy)]
-                train_label = target[list(queried_index_set_copy)]
-
-                val_data = train_set.iloc[val_idx]
-                val_label = target[val_idx]
-
-                model = LogisticRegression(solver='newton-cg', multi_class='multinomial',
-                                           C=hyper_params[len(queried_index_set)])
-                model.fit(train_data, train_label)
-
-                sample_index = query_index(model=model, train_set=train_set,
-                                           queried_index_set=queried_index_set_copy,
-                                           unqueried_index_set=unqueried_index_set_copy,
-                                           query_strategy="selfTrain_" + query_strategy, target=target_copy,
-                                           val_idx=val_idx, hyper_params=hyper_params)
-
-                target_copy[sample_index] = np.argmax(np.squeeze(model.predict_proba([train_set.iloc[sample_index]])))
-
-                unqueried_index_set_copy.remove(sample_index)
-                queried_index_set_copy.add(sample_index)
+            pred_label[val_idx] = target[val_idx]
+            pred_label[list(queried_index_set)] = target[list(queried_index_set)]
 
             # model evaluation
-
-            train_data = train_set.iloc[list(queried_index_set_copy)]
-            train_label = target_copy[list(queried_index_set_copy)]
-
-            val_data = train_set.iloc[val_idx]
-            val_label = target[val_idx]
+            train_data = train_set.iloc[train_idx]
+            train_label = pred_label[train_idx]
 
             model = LogisticRegression(solver='newton-cg', multi_class='multinomial',
                                        C=hyper_params[end_n_sample])
@@ -197,8 +176,8 @@ print(result_pred)
 
 # do not want dot in filenames
 query_strategy = query_strategy.replace('.', '')
-print("Saving result to ./Result/selfTrain_{}_eem_multi.csv".format(query_strategy))
-savetxt("./Result/selfTrain_{}_eem_multi.csv".format(query_strategy), result_pred, delimiter=',')
+print("Saving result to ./Result/labelSpread_{}_eem_multi.csv".format(query_strategy))
+savetxt("./Result/labelSpread_{}_eem_multi.csv".format(query_strategy), result_pred, delimiter=',')
 
 
 

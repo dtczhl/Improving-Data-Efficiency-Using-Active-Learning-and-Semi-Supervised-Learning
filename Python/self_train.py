@@ -157,8 +157,8 @@ def run_cv(train_set, target):
                                      label=target_copy[list(queried_index_set_copy)])
             valid_data = lgb.Dataset(train_set.iloc[val_idx], label=target_copy[val_idx])
 
-            # !!! model = lgb.train(hyper_params[end_n_sample], train_data, valid_sets=[valid_data], verbose_eval=False)
-            model = lgb.train(hyper_params[len(queried_index_set)], train_data, valid_sets=[valid_data], verbose_eval=False)
+            model = lgb.train(hyper_params[end_n_sample], train_data, valid_sets=[valid_data], verbose_eval=False)
+            # model = lgb.train(hyper_params[len(queried_index_set)], train_data, valid_sets=[valid_data], verbose_eval=False)
 
 
             preds[len(queried_index_set) - 1, val_idx, :] = model.predict(train_set.iloc[val_idx])

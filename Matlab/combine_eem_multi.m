@@ -6,18 +6,12 @@ my_line_style = {':', '-', '-', '-.', '-'};
 my_marker = {'none', 'o', '+', 'none', '^'};
 line_spec = {':', 'o-', '+-', '-.', '^-'};
 
+
 % al = Active Learning
 
 al_strategies = struct( ...
     'random_eem_multi', 'Baseline', ...
-    'labelSpread_rbf_eem_multi', 'Kernel = RBF', ...
-    'labelSpread_knn_eem_multi', 'Kernel = KNN');
-
-% al_strategies = struct( ...
-%     'random_eem', 'Baseline', ...
-%     'labelSpread_rbf_eem', 'Kernel = RBF', ...
-%     'labelSpread_knn_eem_multi', 'Kernel = KNN');
-
+    'uncertainty_entropy_labelSpread_rbf_eem_multi', 'Uncertainty:Entropy + Kernel:RBF');
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
@@ -55,7 +49,7 @@ for k = 1:numel(fields)
 end
 
 hleg = legend(aline, my_legend, 'location', 'southeast');
-% set(hleg, 'box', 'off')
+%set(hleg, 'box', 'off')
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
 xlim([25, 127])
@@ -64,7 +58,7 @@ xlabel('Number of labeled samples')
 ylabel('Accuracy (%)')
 % xticks(10:10:90)
 yticks(20:10:100)
-title('Label Spreading')
+% title('Combined')
 hold off
 
-saveas(gcf, './Image/label_spread_eem_multi.png')
+saveas(gcf, './Image/combine_eem_multi.png')

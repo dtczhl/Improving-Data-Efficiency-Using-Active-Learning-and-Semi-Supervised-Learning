@@ -59,7 +59,7 @@ We use random sampling as the baseline.
 
 2. EEM.
 
-3. EEM multi-class. Run `Python/active_learning_eem_multi.py random`. Results are saved to `Result/random_eem_multi.csv
+3. EEM multi-class. Run `Python/active_learning_eem_multi.py random`. Results are saved to `Result/random_eem_multi.csv`
 
 
 
@@ -114,9 +114,13 @@ We use random sampling as the baseline.
 
 ## Combine Active Learning and Semi-supervised Learning
 
-1.  Plasma. Run `Python/combine.py uncertainty_entropy labelSpread_rbf`. Results are saved to `Result/uncertainty_entropy_labelSpread_rbf.csv`.
+1. Plasma. Run `Python/combine.py uncertainty_entropy labelSpread_rbf`. Results are saved to `Result/uncertainty_entropy_labelSpread_rbf.csv`.
 
+2. EEM
+
+3. EEM multi. Run `Python/combine_eem_multi.py uncertainty_entropy labelSpread_rbf`. Results are saved to `Result/uncertainty_entropy_labelSpread_rbf_eem_multi.csv`.
 
 ## Result Analysis and Visualization
 
 Under `Matlab` directory.
+

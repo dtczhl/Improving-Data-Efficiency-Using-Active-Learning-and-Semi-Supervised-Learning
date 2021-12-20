@@ -22,8 +22,12 @@ n_trial = 30
 n_fold = 5
 
 # do not change
-start_n_sample = 20
-end_n_sample = 57
+# start_n_sample = 20
+# end_n_sample = 57
+
+start_n_sample = 15
+end_n_sample = 38
+
 # end_n_sample - end_n_train for optuna
 
 
@@ -54,7 +58,10 @@ sp_df["Label"] = 0
 se_df["Label"] = 0
 sep_df["Label"] = 1
 
-eem_new_df = pd.concat([sp_df, se_df, sep_df], ignore_index=True)
+# eem_new_df = pd.concat([sp_df, se_df, sep_df], ignore_index=True)
+
+eem_new_df = pd.concat([se_df, sep_df], ignore_index=True)
+
 
 # change column names
 column_names = eem_new_df.columns

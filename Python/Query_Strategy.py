@@ -143,7 +143,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
 
         for k, v in zip(unqueried_index_list, prob):
 
-            if isinstance(model, SVC) or isinstance(model, LogisticRegression):
+            if isinstance(model, SVC):
 
                 target_1, target_2 \
                     = np.copy(target), np.copy(target)
@@ -195,6 +195,84 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
                 expected_error_arr[i_index] = expected_error
                 i_index = i_index + 1
 
+            elif isinstance(model, LogisticRegression):
+
+                target_1, target_2, target_3, target_4 \
+                    = np.copy(target), np.copy(target), np.copy(target), np.copy(target)
+                target_1[k], target_2[k], target_3[k], target_4[k] = 0, 1, 2, 3
+
+                queried_index_set_temp = copy.deepcopy(queried_index_set)
+                queried_index_set_temp.add(k)
+
+                # Last number,
+                if len(queried_index_set_temp) > len(hyper_params):
+                    return unqueried_index_list[0]
+
+                train_data_1 = train_set.iloc[list(queried_index_set_temp)]
+                train_label_1 = target_1[list(queried_index_set_temp)]
+
+                train_data_2 = train_set.iloc[list(queried_index_set_temp)]
+                train_label_2 = target_2[list(queried_index_set_temp)]
+
+                train_data_3 = train_set.iloc[list(queried_index_set_temp)]
+                train_label_3 = target_3[list(queried_index_set_temp)]
+
+                train_data_4 = train_set.iloc[list(queried_index_set_temp)]
+                train_label_4 = target_4[list(queried_index_set_temp)]
+
+                model_1 = LogisticRegression(solver='newton-cg', multi_class='multinomial', C=hyper_params[len(queried_index_set)])
+                model_1.fit(train_data_1, train_label_1)
+
+                model_2 = LogisticRegression(solver='newton-cg', multi_class='multinomial', C=hyper_params[len(queried_index_set)])
+                model_2.fit(train_data_2, train_label_2)
+
+                model_3 = LogisticRegression(solver='newton-cg', multi_class='multinomial', C=hyper_params[len(queried_index_set)])
+                model_3.fit(train_data_3, train_label_3)
+
+                model_4 = LogisticRegression(solver='newton-cg', multi_class='multinomial', C=hyper_params[len(queried_index_set)])
+                model_4.fit(train_data_4, train_label_4)
+
+                prob_1 = model_1.predict_proba(train_set.iloc[unqueried_index_list])
+                prob_2 = model_2.predict_proba(train_set.iloc[unqueried_index_list])
+                prob_3 = model_3.predict_proba(train_set.iloc[unqueried_index_list])
+                prob_4 = model_4.predict_proba(train_set.iloc[unqueried_index_list])
+
+                if base_query_method == "leastconfident":
+
+                    utility_1 = calculate_utility(prob_1, "confident")
+                    error_1 = np.sum(1 - utility_1)
+
+                    utility_2 = calculate_utility(prob_2, "confident")
+                    error_2 = np.sum(1 - utility_2)
+
+                    utility_3 = calculate_utility(prob_3, "confident")
+                    error_3 = np.sum(1 - utility_3)
+
+                    utility_4 = calculate_utility(prob_4, "confident")
+                    error_4 = np.sum(1 - utility_4)
+
+                elif base_query_method == "entropy":
+
+                    utility_1 = calculate_utility(prob_1, "entropy")
+                    error_1 = np.sum(utility_1)
+
+                    utility_2 = calculate_utility(prob_2, "entropy")
+                    error_2 = np.sum(utility_2)
+
+                    utility_3 = calculate_utility(prob_3, "entropy")
+                    error_3 = np.sum(utility_3)
+
+                    utility_4 = calculate_utility(prob_4, "entropy")
+                    error_4 = np.sum(utility_4)
+
+                else:
+                    print("Unknown base_query_method={}".format(base_query_method))
+                    exit(-1)
+
+                expected_error = v[0] * error_1 + v[1] * error_2 + v[2] * error_3 + v[3] * error_4
+                expected_error_arr[i_index] = expected_error
+                i_index = i_index + 1
+
             else:
 
                 target_1, target_2, target_3, target_4 \
@@ -207,6 +285,7 @@ def query_index(model, train_set, queried_index_set, unqueried_index_set, query_
                 # Last number,
                 if len(queried_index_set_temp) > len(hyper_params):
                     return unqueried_index_list[0]
+
 
                 train_data_1 = lgb.Dataset(train_set.iloc[list(queried_index_set_temp)],
                                            label=target_1[list(queried_index_set_temp)])

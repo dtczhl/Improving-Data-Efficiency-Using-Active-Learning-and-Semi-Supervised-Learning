@@ -21,37 +21,37 @@ from sklearn.linear_model import RidgeClassifier
 import warnings
 
 models = [
-    LogisticRegression(solver='newton-cg', multi_class='multinomial'),
-    BernoulliNB(),
-    DecisionTreeClassifier(),
-    ExtraTreeClassifier(),
-    ExtraTreesClassifier(),
-    GaussianNB(),
-    KNeighborsClassifier(),
-    LinearDiscriminantAnalysis(),
-    LinearSVC(multi_class='crammer_singer'),
-    MLPClassifier(),
-    NearestCentroid(),
-    QuadraticDiscriminantAnalysis(),
-    RandomForestClassifier(),
-    RidgeClassifier()
+    # LogisticRegression(solver='newton-cg', multi_class='multinomial'),
+    # BernoulliNB(),
+    # DecisionTreeClassifier(),
+    # ExtraTreeClassifier(),
+    # ExtraTreesClassifier(),
+    # GaussianNB(),
+    # KNeighborsClassifier(),
+    # LinearDiscriminantAnalysis(),
+    # LinearSVC(multi_class='crammer_singer'),
+    MLPClassifier(hidden_layer_sizes=(20,)),
+    # NearestCentroid(),
+    # QuadraticDiscriminantAnalysis(),
+    # RandomForestClassifier(),
+    # RidgeClassifier()
 ]
 
 model_names = [
-    'LogisticRegression',
-    'Multivariate Bernoulli',
-    'Decision Tree',
-    'Extra Tree',
-    'Extra Trees',
-    'Gaussian Naive Bayes',
-    'K-nearest Neighbor',
-    'Linear Discriminant Analysis',
-    'Linear Support Vector',
+    # 'LogisticRegression',
+    # 'Multivariate Bernoulli',
+    # 'Decision Tree',
+    # 'Extra Tree',
+    # 'Extra Trees',
+    # 'Gaussian Naive Bayes',
+    # 'K-nearest Neighbor',
+    # 'Linear Discriminant Analysis',
+    # 'Linear Support Vector',
     'Multi-layer Perceptron',
-    'Nearest Centroid',
-    'Quadratic Discriminant Analysis',
-    'Random Forest',
-    'Ridge Regression'
+    # 'Nearest Centroid',
+    # 'Quadratic Discriminant Analysis',
+    # 'Random Forest',
+    # 'Ridge Regression'
 ]
 
 

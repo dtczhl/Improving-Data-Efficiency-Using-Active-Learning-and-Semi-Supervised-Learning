@@ -109,8 +109,11 @@ We use random sampling as the baseline.
 
 ### Label Spreading
 
-1.  Plasma. Run `Python/label_spreading.py [knn|rbf]`. Results are saved to `Result/selfSpread_[knn|rbf].csv`.
+1. Plasma. Run `Python/label_spreading.py [knn|rbf]`. Results are saved to `Result/selfSpread_[knn|rbf].csv`.
 
+2. EEM
+
+3. EEM multi. Run `Python/label_spreading_eem_multi.py [knn|rbf]`. Results are saved to `Result/selfSpread_[knn|rbf]_eem_multi.csv`.
 
 ## Combine Active Learning and Semi-supervised Learning
 

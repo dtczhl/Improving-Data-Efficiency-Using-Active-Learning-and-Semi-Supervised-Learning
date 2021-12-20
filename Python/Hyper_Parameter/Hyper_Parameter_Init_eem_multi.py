@@ -3,6 +3,7 @@ import optuna
 import sklearn
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 
 
 class MyObjective_InitParamEEMMulti(object):
@@ -26,7 +27,10 @@ class MyObjective_InitParamEEMMulti(object):
 
     def __call__(self, trial):
 
+        # For logistic regression classification
         self.param = trial.suggest_float('C', 1e-5, 1e2, log=True)
+
+        # self.param = trial.suggest_float('alpha', 1e-9, 0.1, log=True)
 
         train_idx = np.arange(len(self.train_set))
         train_idx = np.random.permutation(train_idx)
@@ -50,6 +54,8 @@ class MyObjective_InitParamEEMMulti(object):
             val_label = target_run[val_idx_]
 
             model = LogisticRegression(solver='newton-cg', multi_class='multinomial', C=self.param)
+            # model = MLPClassifier(hidden_layer_sizes=(20,), alpha=self.param)
+
             model.fit(train_data, train_label)
             pred_label = model.predict(val_data)
 

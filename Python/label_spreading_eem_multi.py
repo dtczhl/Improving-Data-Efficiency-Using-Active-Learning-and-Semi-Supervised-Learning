@@ -13,8 +13,6 @@ from sklearn.linear_model import LogisticRegression
 import argparse
 from argparse import RawTextHelpFormatter
 
-import lightgbm as lgb
-
 from copy import deepcopy
 
 from MyObjective import MyObjective
@@ -30,7 +28,7 @@ from Query_Strategy import query_index
 # query_strategy = "random"
 
 # number of runs for each reduced number of samples
-n_run = 10
+n_run = 2
 
 # number of folds for cross-validation. !Do not change
 n_fold = 5
@@ -156,6 +154,7 @@ def run_cv(train_set, target):
             sample_index = np.random.choice(tuple(unqueried_index_set))
             unqueried_index_set.remove(sample_index)
             queried_index_set.add(sample_index)
+
 
     for i_pred in range(len(preds)):
         if i_pred < start_n_sample - 1:

@@ -28,7 +28,7 @@ from Query_Strategy import query_index
 # query_strategy = "random"
 
 # number of runs for each reduced number of samples
-n_run = 2
+n_run = 10
 
 # number of folds for cross-validation. !Do not change
 n_fold = 5

@@ -1,5 +1,5 @@
 """
-    K-means
+    K-means for plasma
 """
 
 import os

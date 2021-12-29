@@ -61,4 +61,4 @@ yticks(20:10:100)
 % title('Combined')
 hold off
 
-saveas(gcf, './Image/combine_eem_multi.png')
+saveas(gcf, './Image/combine_eem_multi_uncertainty_labelspread.png')

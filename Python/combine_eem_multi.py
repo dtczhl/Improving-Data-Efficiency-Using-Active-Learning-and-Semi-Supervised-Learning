@@ -58,8 +58,8 @@ help_message = "Combine Active Learning and Semi-supervised Learning. " \
     "Random: random;\n" \
     "Uncertainty: uncertainty_leastConfident, uncertainty_margin, uncertainty_entropy;\n" \
     "Density Weighting: density_[leastConfident|margin|entropy]_[cosine|pearson|euclidean]_[x];\n" \
-    "Minimize Expected Error: minimize_leastConfident, minimize_entropy;\n" \
-    "Supported Methods (Semi_supervised Learning): labelSpread_rbf"
+    "Minimize Expected Error: minimize_[leastConfident|entropy];\n" \
+    "Supported Methods (Semi_supervised Learning): labelSpread_[rbf|knn], selfTrain_random"
 parser = argparse.ArgumentParser(description="Active Learning Strategies", formatter_class=RawTextHelpFormatter)
 parser.add_argument("active_learning", type=str, help=help_message)
 parser.add_argument("semi_supervised_learning", type=str, help=help_message)
@@ -143,19 +143,57 @@ def run_cv(train_set, target):
             # add one sample
             print("\t #fold: {}/{}, #sample: {}/{}".format(fold_+1, n_fold, len(queried_index_set), end_n_sample))
 
-            target_copy = deepcopy(target)
-            target_copy[list(unqueried_index_set)] = -1
+            if semi_supervised_learning_query_strategy.split("_")[0].lower() == 'labelspread':
 
-            kernel = semi_supervised_learning_query_strategy.split("_")[1]
-            label_prop_model = LabelSpreading(kernel=kernel, gamma=0.1)
-            label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
-            pred_label = label_prop_model.predict(train_set)
+                target_copy = deepcopy(target)
+                target_copy[list(unqueried_index_set)] = -1
 
-            pred_label[val_idx] = target[val_idx]
-            pred_label[list(queried_index_set)] = target[list(queried_index_set)]
+                kernel = semi_supervised_learning_query_strategy.split("_")[1]
+                label_prop_model = LabelSpreading(kernel=kernel, gamma=0.1)
+                label_prop_model.fit(train_set.iloc[train_idx], target_copy[train_idx])
+                pred_label = label_prop_model.predict(train_set)
 
-            train_data = train_set.iloc[train_idx]
-            train_label = pred_label[train_idx]
+                pred_label[val_idx] = target[val_idx]
+                pred_label[list(queried_index_set)] = target[list(queried_index_set)]
+            elif semi_supervised_learning_query_strategy.split("_")[0].lower() == 'selftrain':
+
+                # incrementally select data instances
+                queried_index_set_copy = deepcopy(queried_index_set)
+                unqueried_index_set_copy = deepcopy(unqueried_index_set)
+                target_copy = deepcopy(target)
+
+                while len(unqueried_index_set_copy) > 0 and len(queried_index_set_copy) <= end_n_sample:
+                    train_data = train_set.iloc[list(queried_index_set_copy)]
+                    train_label = target[list(queried_index_set_copy)]
+
+                    val_data = train_set.iloc[val_idx]
+                    val_label = target[val_idx]
+
+                    model = LogisticRegression(solver='newton-cg', multi_class='multinomial',
+                                               C=hyper_params[len(queried_index_set)])
+                    model.fit(train_data, train_label)
+                    sample_index = query_index(model=model, train_set=train_set,
+                                               queried_index_set=queried_index_set_copy,
+                                               unqueried_index_set=unqueried_index_set_copy,
+                                               query_strategy=semi_supervised_learning_query_strategy, target=target_copy,
+                                               val_idx=val_idx, hyper_params=hyper_params)
+                    target_copy[sample_index] = np.argmax(np.squeeze(model.predict_proba([train_set.iloc[sample_index]])))
+
+                    unqueried_index_set_copy.remove(sample_index)
+                    queried_index_set_copy.add(sample_index)
+
+            if semi_supervised_learning_query_strategy.split("_")[0].lower() == 'labelspread':
+
+                train_data = train_set.iloc[train_idx]
+                train_label = pred_label[train_idx]
+
+            elif semi_supervised_learning_query_strategy.split("_")[0].lower() == 'selftrain':
+
+                train_data = train_set.iloc[list(queried_index_set_copy)]
+                train_label = target_copy[list(queried_index_set_copy)]
+
+                val_data = train_set.iloc[val_idx]
+                val_label = target[val_idx]
 
             model = LogisticRegression(solver='newton-cg', multi_class='multinomial',
                                        C=hyper_params[len(queried_index_set)])

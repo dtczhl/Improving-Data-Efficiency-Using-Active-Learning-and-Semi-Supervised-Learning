@@ -10,8 +10,8 @@ line_spec = {':', 'o-', '+-', '-.', '^-'};
 % al = Active Learning
 
 al_strategies = struct( ...
-    'random_eem_multi', 'Baseline', ...
-    'uncertainty_entropy_selfTrain_random_eem_multi', 'Uncertainty:Entropy + Self-Train:Random');
+    'random', 'Baseline', ...
+    'uncertainty_entropy_labelSpread_rbf', 'Uncertainty:Entropy + Kernel:RBF');
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
@@ -48,17 +48,17 @@ for k = 1:numel(fields)
      
 end
 
-hleg = legend(aline, my_legend, 'location', 'south', 'fontsize', 24);
+hleg = legend(aline, my_legend, 'location', 'southeast');
 %set(hleg, 'box', 'off')
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
-xlim([25, 127])
-ylim([70, 100])
+xlim([40, 90])
+ylim([60, 100])
 xlabel('Number of labeled samples')
 ylabel('Accuracy (%)')
-% xticks(10:10:90)
+xticks(10:10:90)
 yticks(20:10:100)
-% title('Combined')
+%title('Hybrid')
 hold off
 
-saveas(gcf, './Image/combine_eem_multi_uncertainty_selftrain.png')
+saveas(gcf, './Image/combine_uncertainty_labelspread.png')

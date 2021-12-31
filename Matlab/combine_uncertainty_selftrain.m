@@ -11,7 +11,7 @@ line_spec = {':', 'o-', '+-', '-.', '^-'};
 
 al_strategies = struct( ...
     'random', 'Baseline', ...
-    'uncertainty_entropy_labelSpread_rbf', 'Uncertainty:Entropy + Kernel:RBF');
+    'uncertainty_entropy_selfTrain_random', 'Uncertainty:Entropy + Self-Train:Random');
 
 data_file_prefix = '../Python/Result/';
 data_file_suffix = '.csv';
@@ -48,7 +48,7 @@ for k = 1:numel(fields)
      
 end
 
-hleg = legend(aline, my_legend, 'location', 'southeast');
+hleg = legend(aline, my_legend, 'location', 'south', 'fontsize', 24);
 %set(hleg, 'box', 'off')
 
 set(gca, 'fontsize', 32, 'ygrid', 'on', 'xgrid', 'on')
@@ -61,4 +61,4 @@ yticks(20:10:100)
 %title('Hybrid')
 hold off
 
-saveas(gcf, './Image/combine.png')
+saveas(gcf, './Image/combine_uncertainty_selftrain.png')

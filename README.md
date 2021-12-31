@@ -117,7 +117,7 @@ We use random sampling as the baseline.
 
 ## Combine Active Learning and Semi-supervised Learning
 
-1. Plasma. Run `Python/combine.py uncertainty_entropy labelSpread_rbf`. Results are saved to `Result/uncertainty_entropy_labelSpread_rbf.csv`.
+1. Plasma. Run `Python/combine.py uncertainty_entropy [labelSpread_rbf|selfTrain_random]`. Results are saved to `Result/uncertainty_entropy_[labelSpread_rbf|selfTrain_random].csv`.
 
 2. EEM
 

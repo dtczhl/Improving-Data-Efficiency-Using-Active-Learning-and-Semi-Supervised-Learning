@@ -188,7 +188,3 @@ print(result_pred)
 query_strategy = query_strategy.replace('.', '')
 print("Saving result to ./Result/selfTrain_{}.csv".format(query_strategy))
 savetxt("./Result/selfTrain_{}.csv".format(query_strategy), result_pred, delimiter=',')
-
-
-
-

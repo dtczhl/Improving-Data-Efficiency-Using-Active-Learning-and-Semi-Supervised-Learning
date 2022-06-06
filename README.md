@@ -1,6 +1,12 @@
 # Data Efficiency Project
 
-Collaboration work with Prof. Nitin Nitin.
+Data and source code for our paper:
+
+[**Spectroscopy Approaches for Food Safety Applications: Improving Data Efficiency Using Active Learning and Semi-Supervised Learning**](https://www.frontiersin.org/articles/10.3389/frai.2022.863261/abstract), published in *frontiers in Artificial Intelligence - AI in Food, Agriculture and Water*, 2022
+
+Authors: 
+Huanle Zhang, Nicharee Wisuthiphaet, Hemiao Cui, Nitin Nitin, Xin Liu, and Qing Zhao
+
 
 ## Goal
 
